@@ -1,2 +1,2 @@
-# quail-plugin
-Quail plugin for blender
+# quail-addon
+Work in progress!
