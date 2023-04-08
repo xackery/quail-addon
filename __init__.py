@@ -28,25 +28,7 @@ bl_info = {
 }
 
 
-def write_tmp_file(context, selection, up, forward, mods):
-    # get tmp filepath and add the tmpfile
-    obj_tmp = tempfile.gettempdir() + "/objtemp.obj"
-    # write obj file
-    global_scale = bpy.data.scenes[0].unit_settings.scale_length * 1000.0
-    from mathutils import Matrix
-    g_matrix = (
-        Matrix.Scale(global_scale, 4) @
-        axis_conversion(
-            to_forward=forward,
-            to_up=up,
-        ).to_4x4()
-    )
-    from . import export_shape
-    return export_shape.save(context, filepath=obj_tmp, use_selection=selection,
-                             use_edges=True, use_mesh_modifiers=mods, global_matrix=g_matrix)
-
-
-def export_data(context, filepath, level, selection, batch_mode, up, forward, mods):
+def export_data(context, filepath: str):
     cmd = bpy.utils.user_resource('SCRIPTS') + "/addons/quail-addon/quail"
     # add suffix based on platform
     if sys.platform == "win32":
@@ -62,9 +44,9 @@ def export_data(context, filepath, level, selection, batch_mode, up, forward, mo
     obj_tmp = tempfile.gettempdir() + "/objtemp.obj"
 
     print("Writing temperory mesh file.. \n")
-    write_tmp_file(context, selection, up, forward, mods)
+    # write_tmp_file(context, selection, up, forward, mods)
     print("Converting data and saving as FLO...\n")
-    process = subprocess.run([cmd, obj_tmp, filepath, level])
+    process = subprocess.run([cmd, obj_tmp, filepath])
     if process.returncode == 0:
         print("Wrote FLO file", filepath)
     if os.path.exists(obj_tmp):
@@ -98,8 +80,38 @@ def import_data(context, filepath):
     # if os.path.exists(obj_tmp):
     #    os.remove(obj_tmp)
 
-    # path = "/Users/xackery/Documents/code/projects/quail/model/mesh/mod/test/_it13900.mod"
-    path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_arena.eqg"
+    # remove all collections from scene
+    for collection in bpy.data.collections:
+        bpy.data.collections.remove(collection)
+
+    # remove orphed objects
+    for obj in bpy.data.objects:
+        if obj.users == 0:
+            bpy.data.objects.remove(obj)
+
+    # remove orphened materials
+    for mat in bpy.data.materials:
+        if mat.users == 0:
+            bpy.data.materials.remove(mat)
+
+    for img in bpy.data.images:
+        if img.users == 0:
+            bpy.data.images.remove(img)
+
+    for mesh in bpy.data.meshes:
+        if mesh.users == 0:
+            bpy.data.meshes.remove(mesh)
+
+    for bone in bpy.data.armatures:
+        if bone.users == 0:
+            bpy.data.armatures.remove(bone)
+
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_arena.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it13900.eqg"
+    path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_omensequip.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it12095.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_zmf.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_xhf.eqg"
 
     print("Importing path ", path)
     eqg_import(path)
@@ -123,16 +135,9 @@ class ExportQuail(Operator, ExportHelper):
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
 
-    is_apply_modifiers: BoolProperty(
-        name="Apply Modifiers",
-        description="Apply Modifiers",
-        default=True,
-    )
-
     def execute(self, context):
         return export_data(context,
-                           self.filepath,
-                           self.is_apply_modifiers)
+                           self.filepath)
 
 
 class ImportQuail(Operator, ExportHelper):

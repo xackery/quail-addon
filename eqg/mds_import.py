@@ -1,24 +1,22 @@
 import bpy
 import os
+from ..common.material import add_material, add_material_property
+from mathutils import Vector, Quaternion
 
 
-def mds_import(root_path, path):
+def mds_import(root_path, path, is_visible) -> bool:
     ext = os.path.splitext(path)[1]
     if ext != ".mds":
-        return
+        return False
 
     print("importing mds", path)
     name = os.path.basename(path)
-    # trim prefix _ if it exists
+
     if name[0] == "_":
         name = name[1:]
     base_name = os.path.splitext(name)[0]
 
     mesh = bpy.data.meshes.new(base_name+"_mesh")
-    # create a dictionary of materials
-    materials = {}
-    material_indexes = []
-    material_shaders = {}
 
     if os.path.exists(path+"/material.txt"):
         with open(path+"/material.txt") as f:
@@ -26,15 +24,10 @@ def mds_import(root_path, path):
             # skip first line
             lines.pop(0)
             for line in lines:
-                records = line.split(" ")
-                material = bpy.data.materials.new(name=records[0])
-                # add material to dictionary
-                materials[records[0]] = material
-                material.use_nodes = True
-                mesh.materials.append(material)
-                material_indexes.append(records[0])
-                material_shaders[records[0]] = "Opaque_MaxCB1.fx"
-                print("adding material", records[0])
+                records = line.split("|")
+                if bpy.data.materials.get(records[0]) is None:
+                    add_material(records[0], records[1], records[2])
+                mesh.materials.append(bpy.data.materials[records[0]])
 
     if os.path.exists(path+"/material_property.txt"):
         with open(path+"/material_property.txt") as f:
@@ -42,58 +35,9 @@ def mds_import(root_path, path):
             # skip first line
             lines.pop(0)
             for line in lines:
-                records = line.split(" ")
-                # get material from materials
-                material = materials[records[0]]
-                if records[1] == "e_TextureDiffuse0":
-                    # create texture
-                    texture = bpy.data.textures.new(
-                        name=records[2], type='IMAGE')
-                    # create texture node
-                    texture_node = material.node_tree.nodes.new(
-                        'ShaderNodeTexImage')
-
-                    # check if file exists
-                    if os.path.exists(root_path+"/"+records[2]):
-                        image = bpy.data.images.load(root_path+"/"+records[2])
-                        texture.image = image
-                        texture_node.image = image
-                    # link nodes
-                    material.node_tree.links.new(
-                        texture_node.outputs[0], material.node_tree.nodes["Principled BSDF"].inputs[0])
-                    # set node position
-                    texture_node.location = (-350, 280)
-                if records[1] == "e_TextureNormal0":
-                    # create texture
-                    texture = bpy.data.textures.new(
-                        name=records[2], type='IMAGE')
-                    # create texture node
-                    texture_node = material.node_tree.nodes.new(
-                        'ShaderNodeTexImage')
-
-                    # check if file exists
-                    if os.path.exists(root_path+"/"+records[2]):
-                        image = bpy.data.images.load(root_path+"/"+records[2])
-                        texture.image = image
-                        texture_node.image = image
-                    material.node_tree.links.new(
-                        texture_node.outputs[0], material.node_tree.nodes["Principled BSDF"].inputs[22])
-                    # move node
-                    texture_node.location = (-350, 0)
-
-    for material_name in material_indexes:
-        material = materials[material_name]
-        if material_shaders[material_name] == "Opaque_MaxCB1.fx":
-            # turn off metallic
-            material.node_tree.nodes["Principled BSDF"].inputs[4].default_value = 0
-            # turn off specular
-            material.node_tree.nodes["Principled BSDF"].inputs[5].default_value = 0
-            # turn off specular tint
-            material.node_tree.nodes["Principled BSDF"].inputs[6].default_value = 0
-            # turn off roughness
-            material.node_tree.nodes["Principled BSDF"].inputs[7].default_value = 0
-            # turn off anisotropic
-            material.node_tree.nodes["Principled BSDF"].inputs[8].default_value = 0
+                records = line.split("|")
+                add_material_property(
+                    root_path, records[0], records[1], records[2], records[3])
 
     vert_mesh = []
     uv_mesh = []
@@ -103,12 +47,13 @@ def mds_import(root_path, path):
             # skip first line
             lines.pop(0)
             for line in lines:
-                records = line.split(" ")
+                records = line.split("|")
                 vert_line = records[1].split(",")
-                vert_mesh.append((float(vert_line[0]), float(
-                    vert_line[1]), float(vert_line[2])))
-                uv_line = records[2].split(",")
-                uv_mesh.append((float(uv_line[0]), float(uv_line[1])))
+                vert_mesh.append((float(vert_line[1]), -float(
+                    vert_line[0]), -float(vert_line[2])))
+                uv_line = records[3].split(",")
+                uv_mesh.append((float(uv_line[0]), -float(uv_line[1])))
+    # uv_mesh.reverse()
 
     material_mesh = []
     normal_mesh = []
@@ -118,27 +63,83 @@ def mds_import(root_path, path):
             # skip first line
             lines.pop(0)
             for line in lines:
-                records = line.split(" ")
+                records = line.split("|")
                 normal_line = records[0].split(",")
-                normal_mesh.append((int(normal_line[0]), int(
-                    normal_line[1]), int(normal_line[2])))
-                for i, material_name in enumerate(material_indexes):
-                    if material_name == records[2]:
-                        material_mesh.append(i)
+                normal_mesh.append((int(normal_line[1]), int(
+                    normal_line[0]), int(normal_line[2])))
+                material_mesh.append(
+                    bpy.data.materials.find(records[2].rstrip()))
+
+    collection = bpy.data.collections.new(name)
+    # put collection in scene
+    bpy.context.scene.collection.children.link(collection)
+
+    # if os.path.exists(path+"/bone.txt"):
+    #     arm = bpy.data.armatures.new(name="root")
+    #     rig = bpy.data.objects.new("root", arm)
+    #     bpy.context.scene.collection.objects.link(rig)
+    #     bpy.context.view_layer.objects.active = rig
+    #     bpy.ops.object.editmode_toggle()
+
+    #     bone_obj = bpy.data.objects.new(
+    #         name="root", object_data=arm)
+
+    #     collection.objects.link(bone_obj)
+
+    #     with open(path+"/bone.txt") as f:
+    #         lines = f.readlines()
+    #         # skip first line
+    #         lines.pop(0)
+    #         bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+    #         parent_bone_quad_arm_space = Quaternion((1, 0, 0, 0))
+
+    #         for i, line in enumerate(lines):
+    #             records = line.split("|")
+    #             current_bone = arm.edit_bones.new(name=records[0])
+
+    #             position = records[4].split(",")
+    #             position = (float(position[0]), float(
+    #                 position[1]), float(position[2]))
+    #             quad = records[5].split(",")
+    #             quad = (float(quad[0]), float(quad[1]),
+    #                     float(quad[2]), float(quad[3]))
+    #             pivot_line = records[4].split(",")
+    #             current_bone.head = (0, 0, 0)
+    #             current_bone.tail = (float(pivot_line[0]), float(
+    #                 pivot_line[1]), float(pivot_line[2]))
+
+    #             if i == 0:
+    #                 quat_arm_space = Quaternion(quad)
+    #                 current_bone.transform(quat_arm_space.to_matrix())
+    #                 current_bone.translate(position)
+    #                 parent_bone = current_bone
+    #                 parent_bone_tail = current_bone.tail
+    #                 parent_bone_quad_arm_space = quat_arm_space
+    #             else:
+    #                 quat_arm_space = Quaternion(quad)
+    #                 transform_quat = parent_bone_quad_arm_space @ quat_arm_space
+    #                 current_bone.transform(quat_arm_space.to_matrix())
+    #                 current_bone.translate(position)
+    #                 current_bone.parent = parent_bone
+    #                 parent_bone = current_bone
+    #                 parent_bone_tail = current_bone.tail
+    #                 parent_bone_quad_arm_space = quat_arm_space
 
     mesh.from_pydata(vert_mesh, [], normal_mesh)
+    uvlayer = mesh.uv_layers.new(name=base_name+"_uv")
+    for vert in mesh.vertices:
+        print(vert.index, uv_mesh[vert.index])
+        uvlayer.data[vert.index].uv = uv_mesh[vert.index]
+
     # populate mesh polygons
     mesh.update(calc_edges=True)
     # set normal material index
-    mesh.polygons.foreach_set("material_index", material_mesh)
-
-    uvlayer = mesh.uv_layers.new(name=base_name+"_uv")
-    for vert in mesh.vertices:
-        uvlayer.data[vert.index].uv = uv_mesh[vert.index]
+    for i in range(len(mesh.polygons)):
+        mesh.polygons[i].material_index = material_mesh[i]
 
     obj = bpy.data.objects.new(base_name, mesh)
-
-    collection = bpy.data.collections.new(name)
     collection.objects.link(obj)
-    # put collection in scene
-    bpy.context.scene.collection.children.link(collection)
+
+    if not is_visible:
+        bpy.context.view_layer.active_layer_collection.children[name].hide_viewport = True
+    return True
