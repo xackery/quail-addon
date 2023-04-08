@@ -108,8 +108,8 @@ def import_data(context, filepath):
 
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_arena.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it13900.eqg"
-    path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_omensequip.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it12095.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_omensequip.eqg"
+    path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it12095.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_zmf.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_xhf.eqg"
 
