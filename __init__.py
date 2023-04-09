@@ -1,4 +1,5 @@
 from .eqg.importer import eqg_import
+from .s3d.importer import s3d_import
 from bpy_extras.io_utils import (
     ExportHelper,
     axis_conversion,
@@ -109,13 +110,16 @@ def import_data(context, filepath):
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_arena.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it13900.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_omensequip.eqg"
-    path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it12095.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it12095.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_zmf.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_xhf.eqg"
-
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_shp_chr.s3d"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_arena.s3d"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_crushbone.s3d"
+    path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_gequip.s3d"
     print("Importing path ", path)
     eqg_import(path)
-    # s3d_import(path)
+    s3d_import(path)
     print("Finished in ", time.time() - start_time, " seconds")
 
     return {'FINISHED'}

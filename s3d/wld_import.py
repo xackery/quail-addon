@@ -4,12 +4,12 @@ from ..common.material import add_material, add_material_property
 from mathutils import Vector, Quaternion
 
 
-def mod_import(root_path, path, is_visible) -> bool:
+def wld_import(root_path, path, is_visible) -> bool:
     ext = os.path.splitext(path)[1]
-    if ext != ".mod":
+    if ext != ".wld":
         return False
 
-    print("importing mod", path)
+    print("importing wld", path)
     name = os.path.basename(path)
 
     if name[0] == "_":
@@ -38,6 +38,31 @@ def mod_import(root_path, path, is_visible) -> bool:
                 records = line.split("|")
                 add_material_property(
                     root_path, records[0], records[1], records[2], records[3])
+                if records[1] == "e_TextureDiffuse0" and records[2][-4:] == ".dds" and os.path.exists(root_path+"/"+records[2][:-4]+".txt"):
+                    with open(root_path+"/"+records[2][:-4]+".txt") as f:
+                        anim_data = f.read()
+                        material = bpy.data.materials[records[0]]
+                        material["anim_data"] = anim_data
+                        # iterate anim_data line by line
+                        # skip first line
+                        lines = anim_data.splitlines()
+                        lines.pop(0)
+                        lines.pop(0)
+                        for line in lines:
+                            if records[2] == line:
+                                continue
+                            if line[-4:] != ".dds":
+                                continue
+                            line = line[:-4]
+                            print("analyzing anim data line "+line)
+
+                            if bpy.data.materials.find(line) == -1:
+                                print("adding anim material")
+                                # add material
+                                add_material(
+                                    line, records[1], records[2])
+                                add_material_property(
+                                    root_path, line, records[1], line+".dds", records[3])
 
     vert_mesh = []
     uv_mesh = []
@@ -50,7 +75,7 @@ def mod_import(root_path, path, is_visible) -> bool:
                 records = line.split("|")
                 vert_line = records[1].split(",")
                 vert_mesh.append((float(vert_line[1]), -float(
-                    vert_line[0]), float(vert_line[2])))
+                    vert_line[0]), -float(vert_line[2])))
                 uv_line = records[3].split(",")
                 uv_mesh.append((float(uv_line[0]), float(uv_line[1])))
     # uv_mesh.reverse()
@@ -128,7 +153,6 @@ def mod_import(root_path, path, is_visible) -> bool:
     mesh.from_pydata(vert_mesh, [], normal_mesh)
     uvlayer = mesh.uv_layers.new(name=base_name+"_uv")
     for vert in mesh.vertices:
-        # print(vert.index, uv_mesh[vert.index])
         uvlayer.data[vert.index].uv = uv_mesh[vert.index]
 
     # populate mesh polygons

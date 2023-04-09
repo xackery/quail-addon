@@ -4,11 +4,10 @@ from . import mds_import, ter_import, mod_import
 
 
 def eqg_import(eqg_path):
-    print("importing eqg", eqg_path)
     ext = os.path.splitext(eqg_path)[1]
-    print(ext)
     if ext != ".eqg":
         return
+    print("eqg detected")
 
     # set visibility of all objects if a zone
     is_visible = True
