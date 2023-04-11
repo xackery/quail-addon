@@ -26,7 +26,8 @@ def mod_import(root_path, path, is_visible) -> bool:
             for line in lines:
                 records = line.split("|")
                 if bpy.data.materials.get(records[0]) is None:
-                    add_material(records[0], records[1], records[2])
+                    add_material(records[0].strip(),
+                                 records[1].strip(), records[2].strip())
                 mesh.materials.append(bpy.data.materials[records[0]])
 
     if os.path.exists(path+"/material_property.txt"):
@@ -39,8 +40,8 @@ def mod_import(root_path, path, is_visible) -> bool:
                 add_material_property(
                     root_path, records[0], records[1], records[2], records[3])
 
-    vert_mesh = []
-    uv_mesh = []
+    mesh_verts = []
+    mesh_uvs = []
     if os.path.exists(path+"/vertex.txt"):
         with open(path+"/vertex.txt") as f:
             lines = f.readlines()
@@ -49,14 +50,15 @@ def mod_import(root_path, path, is_visible) -> bool:
             for line in lines:
                 records = line.split("|")
                 vert_line = records[1].split(",")
-                vert_mesh.append((float(vert_line[1]), -float(
-                    vert_line[0]), float(vert_line[2])))
+                mesh_verts.append((float(vert_line[0]), float(
+                    vert_line[1]), float(vert_line[2])))
                 uv_line = records[3].split(",")
-                uv_mesh.append((float(uv_line[0]), float(uv_line[1])))
+                mesh_uvs.append((float(uv_line[0]), float(uv_line[1])))
     # uv_mesh.reverse()
 
-    material_mesh = []
-    normal_mesh = []
+    mesh_materials = []
+    mesh_normals = []
+    mesh_flags = []
     if os.path.exists(path+"/triangle.txt"):
         with open(path+"/triangle.txt") as f:
             lines = f.readlines()
@@ -65,9 +67,10 @@ def mod_import(root_path, path, is_visible) -> bool:
             for line in lines:
                 records = line.split("|")
                 normal_line = records[0].split(",")
-                normal_mesh.append((int(normal_line[1]), int(
-                    normal_line[0]), int(normal_line[2])))
-                material_mesh.append(
+                mesh_normals.append((int(normal_line[0]), int(
+                    normal_line[1]), int(normal_line[2])))
+                mesh_flags.append(int(records[1]))
+                mesh_materials.append(
                     bpy.data.materials.find(records[2].rstrip()))
 
     collection = bpy.data.collections.new(name)
@@ -125,17 +128,18 @@ def mod_import(root_path, path, is_visible) -> bool:
     #                 parent_bone_tail = current_bone.tail
     #                 parent_bone_quad_arm_space = quat_arm_space
 
-    mesh.from_pydata(vert_mesh, [], normal_mesh)
+    mesh.from_pydata(mesh_verts, [], mesh_normals)
     uvlayer = mesh.uv_layers.new(name=base_name+"_uv")
     for vert in mesh.vertices:
         # print(vert.index, uv_mesh[vert.index])
-        uvlayer.data[vert.index].uv = uv_mesh[vert.index]
+        uvlayer.data[vert.index].uv = mesh_uvs[vert.index]
 
     # populate mesh polygons
     mesh.update(calc_edges=True)
     # set normal material index
     for i in range(len(mesh.polygons)):
-        mesh.polygons[i].material_index = material_mesh[i]
+        mesh.polygons[i].material_index = mesh_materials[i]
+        # mesh.polygons[i]["flags"] = mesh_flags[i]
 
     obj = bpy.data.objects.new(base_name, mesh)
     collection.objects.link(obj)

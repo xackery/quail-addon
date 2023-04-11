@@ -1,4 +1,5 @@
 from .eqg.importer import eqg_import
+from .eqg.exporter import eqg_export
 from .s3d.importer import s3d_import
 from bpy_extras.io_utils import (
     ExportHelper,
@@ -21,7 +22,7 @@ auto_load.init()
 bl_info = {
     "name": "Quail",
     "author": "xackery",
-    "version": (1, 0),
+    "version": (1, 0, 1),
     "blender": (3, 4, 0),
     "location": "File > Export, File > Import",
     "category": "Import-Export",
@@ -44,14 +45,12 @@ def export_data(context, filepath: str):
         os.chmod(cmd, mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
     obj_tmp = tempfile.gettempdir() + "/objtemp.obj"
 
-    print("Writing temperory mesh file.. \n")
-    # write_tmp_file(context, selection, up, forward, mods)
-    print("Converting data and saving as FLO...\n")
-    process = subprocess.run([cmd, obj_tmp, filepath])
-    if process.returncode == 0:
-        print("Wrote FLO file", filepath)
-    if os.path.exists(obj_tmp):
-        os.remove(obj_tmp)
+    path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/out/_it13926.eqg"
+    start_time = time.time()
+    print("Export to path", path)
+    eqg_export(path)
+    print("Finished in ", time.time() - start_time, " seconds")
+
     return {'FINISHED'}
 
 
@@ -90,11 +89,6 @@ def import_data(context, filepath):
         if obj.users == 0:
             bpy.data.objects.remove(obj)
 
-    # remove orphened materials
-    for mat in bpy.data.materials:
-        if mat.users == 0:
-            bpy.data.materials.remove(mat)
-
     for img in bpy.data.images:
         if img.users == 0:
             bpy.data.images.remove(img)
@@ -107,16 +101,23 @@ def import_data(context, filepath):
         if bone.users == 0:
             bpy.data.armatures.remove(bone)
 
+    # remove orphened materials
+    for mat in bpy.data.materials:
+        if mat.users == 0:
+            bpy.data.materials.remove(mat)
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_arena.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it13900.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_omensequip.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it12095.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_pum_chr.s3d"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_zmf.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_xhf.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_shp_chr.s3d"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_arena.s3d"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_crushbone.s3d"
-    path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_gequip.s3d"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_gequip.s3d"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_gequip6.s3d"
+    path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it13926.eqg"
     print("Importing path ", path)
     eqg_import(path)
     s3d_import(path)
@@ -137,7 +138,7 @@ class ExportQuail(Operator, ExportHelper):
         default="*.eqg|*.s3d",
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
-    )
+    )  # type: ignore
 
     def execute(self, context):
         return export_data(context,
@@ -156,7 +157,7 @@ class ImportQuail(Operator, ExportHelper):
         default="*.eqg|*.s3d",
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
-    )
+    )  # type: ignore
 
     def execute(self, context):
         return import_data(context,

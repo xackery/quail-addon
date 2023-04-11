@@ -9,6 +9,8 @@ def add_material(material_name, flags, shader):
     material["fx"] = shader
     if shader == "Opaque_MaxCB1.fx":
         pass
+    # set specular to 0
+    material.specular_intensity = 0
     return material
 
 
@@ -24,7 +26,9 @@ def add_material_property(root_path, material_name, property_name, property_valu
     elif property_name == "e_TextureNormal0":
         bsdf_index = 22
         node_position = (-350, 0)
-
+    elif property_name == "e_fShininess0":
+        material.node_tree.nodes["Principled BSDF"].inputs[7].default_value = float(
+            property_value)
     if bsdf_index == -1:
         return
 
