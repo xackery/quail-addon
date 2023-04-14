@@ -27,7 +27,7 @@ def add_material_property(root_path, material_name, property_name, property_valu
         bsdf_index = 22
         node_position = (-350, 0)
     elif property_name == "e_fShininess0":
-        material.node_tree.nodes["Principled BSDF"].inputs[7].default_value = float(
+        material.node_tree.nodes["Principled BSDF"].inputs[7].default_value = float(  # type: ignore
             property_value)
     if bsdf_index == -1:
         return

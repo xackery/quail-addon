@@ -1,6 +1,6 @@
 import bpy
 import os
-from . import mds_import, ter_import, mod_import
+from ..common.mesh_import import mesh_import
 
 
 def eqg_import(eqg_path):
@@ -14,7 +14,7 @@ def eqg_import(eqg_path):
 
     for sub_path, dirs, files in os.walk(eqg_path):
         ext = os.path.splitext(sub_path)[1]
-        if ext == ".ter" or ext == ".zon":
+        if ext == ".ter":
             is_visible = False
             break
     if is_visible:
@@ -23,10 +23,7 @@ def eqg_import(eqg_path):
         pass
 
     for sub_path, dirs, files in os.walk(eqg_path):
-        if ter_import.ter_import(eqg_path, sub_path) and is_visible:
-            is_visible = False
-        if mds_import.mds_import(eqg_path, sub_path, is_visible) and is_visible:
-            print("hiding future")
-            is_visible = False
-        if mod_import.mod_import(eqg_path, sub_path, is_visible) and is_visible:
+        if ext == ".ter":
+            is_visible = True
+        if mesh_import(eqg_path, sub_path, is_visible) and is_visible:
             is_visible = False

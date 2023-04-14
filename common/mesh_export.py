@@ -1,10 +1,9 @@
 import bpy
 import os
-from ..common.material import add_material, add_material_property
-from mathutils import Vector, Quaternion
+from .material import add_material, add_material_property
 
 
-def mod_export(root_path):
+def mesh_export(root_path):
     for collection in bpy.data.collections:
         if collection.name.endswith(".mod"):
             path = root_path + "/_" + collection.name
@@ -26,16 +25,17 @@ def mod_export(root_path):
                         with open(path+"/material_property.txt", "w") as mw:
                             mw.write(
                                 "material_name|property_name|value|category\n")
+
                             if mat.material.node_tree.nodes["Principled BSDF"].inputs[7].default_value != 0:
                                 mw.write("%s|%s|%f|%d\n" % (
                                     mat.material.name, "e_fShininess0", mat.material.node_tree.nodes["Principled BSDF"].inputs[7].default_value, 2))
                             for node in mat.material.node_tree.nodes:
                                 if node.label == "e_TextureDiffuse0":
                                     mw.write("%s|%s|%s|%d\n" % (
-                                        mat.material.name, node.label, node.image.name, 2))
+                                        mat.material.name, node.label, node.image.name, 2))  # type: ignore
                                 elif node.label == "e_TextureNormal0":
                                     mw.write("%s|%s|%s|%d\n" % (
-                                        mat.material.name, node.label, node.image.name, 2))
+                                        mat.material.name, node.label, node.image.name, 2))  # type: ignore
 
                 mesh = obj.to_mesh()
                 with open(path+"/vertex.txt", "w") as vw:

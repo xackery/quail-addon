@@ -1,6 +1,6 @@
 import bpy
 import os
-from . import wld_import, mds_import
+from ..common.mesh_import import mesh_import
 
 
 def s3d_import(s3d_path):
@@ -24,7 +24,5 @@ def s3d_import(s3d_path):
 
     for sub_path, dirs, files in os.walk(s3d_path):
         print("importing", sub_path)
-        if wld_import.wld_import(s3d_path, sub_path, is_visible) and is_visible:
-            is_visible = False
-        if mds_import.mds_import(s3d_path, sub_path, is_visible) and is_visible:
+        if mesh_import(s3d_path, sub_path, is_visible) and is_visible:
             is_visible = False

@@ -22,7 +22,7 @@ auto_load.init()
 bl_info = {
     "name": "Quail",
     "author": "xackery",
-    "version": (1, 0, 1),
+    "version": (1, 0, 2),
     "blender": (3, 4, 0),
     "location": "File > Export, File > Import",
     "category": "Import-Export",
@@ -54,7 +54,7 @@ def export_data(context, filepath: str):
     return {'FINISHED'}
 
 
-def import_data(context, filepath):
+def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modified: bool = True):
     cmd = bpy.utils.user_resource('SCRIPTS') + "/addons/quail-addon/quail"
     # add suffix based on platform
     if sys.platform == "win32":
@@ -76,39 +76,48 @@ def import_data(context, filepath):
     print("Importing data...\n")
     # process = subprocess.run([cmd, obj_tmp, filepath, level])
     # if process.returncode == 0:
-    #    print("Wrote FLO file", filepath)
+    #    print("Wrote quail file", filepath)
     # if os.path.exists(obj_tmp):
     #    os.remove(obj_tmp)
 
-    # remove all collections from scene
-    for collection in bpy.data.collections:
-        bpy.data.collections.remove(collection)
+    if is_scene_cleared:
+        for collection in bpy.data.collections:
+            bpy.data.collections.remove(collection)
 
-    # remove orphed objects
-    for obj in bpy.data.objects:
-        if obj.users == 0:
-            bpy.data.objects.remove(obj)
+        for mesh in bpy.data.meshes:
+            if mesh.users == 0:
+                bpy.data.meshes.remove(mesh)
 
-    for img in bpy.data.images:
-        if img.users == 0:
-            bpy.data.images.remove(img)
+        # remove orphed objects
+        for obj in bpy.data.objects:
+            if obj.users == 0:
+                bpy.data.objects.remove(obj)
 
-    for mesh in bpy.data.meshes:
-        if mesh.users == 0:
-            bpy.data.meshes.remove(mesh)
+        for bone in bpy.data.armatures:
+            if bone.users == 0:
+                bpy.data.armatures.remove(bone)
 
-    for bone in bpy.data.armatures:
-        if bone.users == 0:
-            bpy.data.armatures.remove(bone)
+        # remove orphened materials
+        for mat in bpy.data.materials:
+            if mat.users == 0:
+                bpy.data.materials.remove(mat)
 
-    # remove orphened materials
-    for mat in bpy.data.materials:
-        if mat.users == 0:
-            bpy.data.materials.remove(mat)
+        for img in bpy.data.images:
+            if img.users == 0:
+                bpy.data.images.remove(img)
+
+    if is_scene_modified:
+        # bpy.context.space_data.clip_end = 5000
+        pass
+
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_test.eqg"
+    # gnome on a stick
+    path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it12095.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_sin.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_arena.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_bloodfields.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it13900.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_omensequip.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it12095.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_pum_chr.s3d"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_zmf.eqg"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_xhf.eqg"
@@ -117,7 +126,7 @@ def import_data(context, filepath):
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_crushbone.s3d"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_gequip.s3d"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_gequip6.s3d"
-    path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it13926.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it13926.eqg"
     print("Importing path ", path)
     eqg_import(path)
     s3d_import(path)
@@ -128,7 +137,7 @@ def import_data(context, filepath):
 
 class ExportQuail(Operator, ExportHelper):
     # important since its how bpy.ops.import_test.some_data is constructed
-    bl_idname = "export_flo.subdiv_data"
+    bl_idname = "export_quail.subdiv_data"
     bl_label = "Export EQG"
 
     # ExportHelper mixin class uses this
@@ -147,21 +156,35 @@ class ExportQuail(Operator, ExportHelper):
 
 class ImportQuail(Operator, ExportHelper):
     # important since its how bpy.ops.import_test.some_data is constructed
-    bl_idname = "import_flo.subdiv_data"
+    bl_idname = "import_quail.subdiv_data"
     bl_label = "Import EQG"
 
     # ImportHelper mixin class uses this
-    filename_ext = ".eqg|.s3d"
+    filename_ext = ".eqg;.s3d"
 
     filter_glob: StringProperty(
-        default="*.eqg|*.s3d",
+        default="*.eqg;*.s3d",
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )  # type: ignore
 
+    is_scene_cleared: BoolProperty(
+        name="Clear Scene Before Import",
+        description="Clears the scene before importing, removing all objects, materials, collections etc",
+        default=True,
+    )  # type: ignore
+
+    is_scene_modified: BoolProperty(
+        name="Modify Scene for Import",
+        description="Sets view clip to 5000 (for large zones), other misc tweaks",
+        default=True,
+    )  # type: ignore
+
     def execute(self, context):
         return import_data(context,
-                           self.filepath)
+                           self.filepath,
+                           self.is_scene_cleared,
+                           self.is_scene_modified)
 
 
 def menu_func_export(self, context):
@@ -191,5 +214,4 @@ def unregister():
 
 
 if __name__ == "__main__":
-    print("test")
     register()
