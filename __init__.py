@@ -24,7 +24,7 @@ auto_load.init()
 bl_info = {
     "name": "Quail",
     "author": "xackery",
-    "version": (1, 0, 2),
+    "version": (1, 0, 0),
     "blender": (3, 4, 0),
     "location": "File > Export, File > Import",
     "category": "Import-Export",
@@ -135,7 +135,7 @@ def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modif
                 bpy.data.images.remove(img)
 
     if is_scene_modified:
-        # bpy.context.space_data.clip_end = 5000
+        # bpy.context.space_data.clip_end = 15000
         pass
 
     if path == "":
@@ -143,6 +143,9 @@ def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modif
         path = pfs_tmp+"/_"+base_name
     eqg_import(path)
     s3d_import(path)
+    for img in bpy.data.images:
+        if img.users > 0 and os.path.exists(img.filepath):
+            img.pack()
     if os.path.exists(pfs_tmp):
         shutil.rmtree(pfs_tmp)
     print("Finished in ", time.time() - start_time, " seconds")
