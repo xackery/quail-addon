@@ -52,7 +52,6 @@ def mesh_parse(root_path, path, name, is_visible) -> bpy.types.Object:
                     vert_line[1]), float(vert_line[2])))
                 uv_line = records[2].split(",")
                 mesh_uvs.append((float(uv_line[0]), float(uv_line[1])))
-                print(uv_line)
     # uv_mesh.reverse()
 
     mesh_materials = []
@@ -128,7 +127,6 @@ def mesh_parse(root_path, path, name, is_visible) -> bpy.types.Object:
     mesh.update(calc_edges=True)
 
     uvlayer = mesh.uv_layers.new(name=name+"_uv")
-    print(len(mesh.vertices), len(mesh_uvs))
     # for vert in mesh.vertices:
     # print(vert.co, vert.index, mesh_uvs[vert.index])
     # uvlayer.data[vert.index].uv = mesh_uvs[vert.index]

@@ -16,6 +16,8 @@ import os
 import stat
 from . import auto_load
 import time
+import shutil
+from .common.message_box import show_message_box
 
 auto_load.init()
 
@@ -43,14 +45,15 @@ def export_data(context, filepath: str):
     mode = os.stat(cmd).st_mode
     if mode != 33261:
         os.chmod(cmd, mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-    obj_tmp = tempfile.gettempdir() + "/objtemp.obj"
+    pfs_tmp = tempfile.gettempdir() + "/objtemp.obj"
 
     path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/out/_it13926.eqg"
     start_time = time.time()
     print("Export to path", path)
     eqg_export(path)
     print("Finished in ", time.time() - start_time, " seconds")
-
+    if os.path.exists(pfs_tmp):
+        os.remove(pfs_tmp)
     return {'FINISHED'}
 
 
@@ -64,21 +67,46 @@ def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modif
     if sys.platform == "darwin":
         cmd += "-darwin"
 
+    show_message_box()
     mode = os.stat(cmd).st_mode
     if mode != 33261:
         os.chmod(cmd, mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
+    # check if file exists
+    if not os.path.exists(filepath):
+        filepath = filepath.replace(".eqg", ".s3d")
+
     # get base of filepath
     pfs_tmp = tempfile.gettempdir() + "/" + os.path.basename(filepath)
-    print("pfs_tmp", pfs_tmp)
-
     start_time = time.time()
     print("Importing data...\n")
-    # process = subprocess.run([cmd, obj_tmp, filepath, level])
-    # if process.returncode == 0:
-    #    print("Wrote quail file", filepath)
-    # if os.path.exists(obj_tmp):
-    #    os.remove(obj_tmp)
+    path = ""
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_test.eqg"
+    # gnome on a stick
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it12095.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_sin.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_arena.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_bloodfields.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it13900.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_omensequip.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_pum_chr.s3d"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_zmf.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_xhf.eqg"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_shp_chr.s3d"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_arena.s3d"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_crushbone.s3d"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_gequip.s3d"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_gequip6.s3d"
+    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it13926.eqg"
+    print("quail blender export %s %s" % (filepath, pfs_tmp))
+    process = subprocess.run(
+        [cmd, "blender", "export", filepath, pfs_tmp])
+    if process.returncode != 0:
+        if os.path.exists(pfs_tmp):
+            shutil.rmtree(pfs_tmp)
+        # capture process error
+        show_message_box("Failed to process in quail", "Quail Error", 'ERROR')
+        return {'CANCELLED'}
 
     if is_scene_cleared:
         for collection in bpy.data.collections:
@@ -110,26 +138,13 @@ def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modif
         # bpy.context.space_data.clip_end = 5000
         pass
 
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_test.eqg"
-    # gnome on a stick
-    path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it12095.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_sin.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_arena.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_bloodfields.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it13900.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_omensequip.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_pum_chr.s3d"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_zmf.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_xhf.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_shp_chr.s3d"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_arena.s3d"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_crushbone.s3d"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_gequip.s3d"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_gequip6.s3d"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it13926.eqg"
-    print("Importing path ", path)
+    if path == "":
+        base_name = os.path.basename(filepath)
+        path = pfs_tmp+"/_"+base_name
     eqg_import(path)
     s3d_import(path)
+    if os.path.exists(pfs_tmp):
+        shutil.rmtree(pfs_tmp)
     print("Finished in ", time.time() - start_time, " seconds")
 
     return {'FINISHED'}
@@ -160,7 +175,7 @@ class ImportQuail(Operator, ExportHelper):
     bl_label = "Import EQG"
 
     # ImportHelper mixin class uses this
-    filename_ext = ".eqg;.s3d"
+    filename_ext = ".eqg"
 
     filter_glob: StringProperty(
         default="*.eqg;*.s3d",
