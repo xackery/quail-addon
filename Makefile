@@ -1,4 +1,4 @@
-VERSION ?= 1.0.3
+VERSION ?= 2.0.4
 
 comma := ,
 COMMA_VERSION := $(subst .,${comma} ,${VERSION})

@@ -2,7 +2,59 @@ import bpy
 import os
 
 
-def add_material(material_name, flags, shader):
+def material_load(path: str, mesh: bpy.types.Mesh):
+    if not os.path.exists(path+"/material.txt"):
+        return
+    with open(path+"/material.txt") as f:
+        lines = f.readlines()
+        # skip first line
+        lines.pop(0)
+        for line in lines:
+            records = line.split("|")
+            if bpy.data.materials.get(records[1]) is None:
+                material_add(records[1], records[2], records[3])
+            mesh.materials.append(bpy.data.materials[records[1]])
+
+
+def material_property_load(root_path: str, path: str, mesh: bpy.types.Mesh):
+    if not os.path.exists(path+"/material_property.txt"):
+        return
+    with open(path+"/material_property.txt") as f:
+        lines = f.readlines()
+        # skip first line
+        lines.pop(0)
+        for line in lines:
+            records = line.split("|")
+            material_property_add(
+                root_path, records[0], records[1], records[2], records[3])
+            if records[1] == "e_TextureDiffuse0" and records[2][-4:] == ".dds" and os.path.exists(root_path+"/"+records[2][:-4]+".txt"):
+                with open(root_path+"/"+records[2][:-4]+".txt") as f:
+                    anim_data = f.read()
+                    material = bpy.data.materials[records[0]]
+                    material["anim_data"] = anim_data
+                    # iterate anim_data line by line
+                    # skip first line
+                    lines = anim_data.splitlines()
+                    lines.pop(0)
+                    lines.pop(0)
+                    for line in lines:
+                        if records[2] == line:
+                            continue
+                        if line[-4:] != ".dds":
+                            continue
+                        line = line[:-4]
+                        print("analyzing anim data line "+line)
+
+                        if bpy.data.materials.find(line) == -1:
+                            print("adding anim material")
+                            # add material
+                            material_add(
+                                line, records[1], records[2])
+                            material_property_add(
+                                root_path, line, records[1], line+".dds", records[3])
+
+
+def material_add(material_name, flags, shader):
     material = bpy.data.materials.new(name=material_name)
     material.use_nodes = True
     material["flags"] = flags
@@ -14,7 +66,7 @@ def add_material(material_name, flags, shader):
     return material
 
 
-def add_material_property(root_path, material_name, property_name, property_value, property_category):
+def material_property_add(root_path, material_name, property_name, property_value, property_category):
     material = bpy.data.materials[material_name]
 
     node_position = (0, 0)

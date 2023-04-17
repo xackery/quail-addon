@@ -1,6 +1,6 @@
 import bpy
 import os
-from .material import add_material, add_material_property
+from .material import material_add, material_property_add
 
 
 def mesh_export(root_path):

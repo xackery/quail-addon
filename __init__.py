@@ -25,7 +25,7 @@ bl_info = {
     "name": "Quail",
     "author": "xackery",
     "version": (1, 0, 0),
-    "blender": (3, 4, 0),
+    "blender": (3, 0, 0),
     "location": "File > Export, File > Import",
     "category": "Import-Export",
     "description": "Helper for EverQuest Archives",
@@ -97,42 +97,41 @@ def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modif
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_crushbone.s3d"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_gequip.s3d"
     # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_gequip6.s3d"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it13926.eqg"
-    print("quail blender export %s %s" % (filepath, pfs_tmp))
-    process = subprocess.run(
-        [cmd, "blender", "export", filepath, pfs_tmp])
-    if process.returncode != 0:
-        if os.path.exists(pfs_tmp):
-            shutil.rmtree(pfs_tmp)
-        # capture process error
-        show_message_box("Failed to process in quail", "Quail Error", 'ERROR')
-        return {'CANCELLED'}
+    path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it13926.eqg"
+    if path == "":
+        print("quail blender export %s %s" % (filepath, pfs_tmp))
+        process = subprocess.run(
+            [cmd, "blender", "export", filepath, pfs_tmp])
+        if process.returncode != 0:
+            if os.path.exists(pfs_tmp):
+                shutil.rmtree(pfs_tmp)
+            # capture process error
+            show_message_box("Failed to process in quail",
+                             "Quail Error", 'ERROR')
+            return {'CANCELLED'}
 
     if is_scene_cleared:
         for collection in bpy.data.collections:
             bpy.data.collections.remove(collection)
 
         for mesh in bpy.data.meshes:
-            if mesh.users == 0:
-                bpy.data.meshes.remove(mesh)
+            bpy.data.meshes.remove(mesh)
 
         # remove orphed objects
         for obj in bpy.data.objects:
-            if obj.users == 0:
-                bpy.data.objects.remove(obj)
+            bpy.data.objects.remove(obj)
 
         for bone in bpy.data.armatures:
-            if bone.users == 0:
-                bpy.data.armatures.remove(bone)
+            bpy.data.armatures.remove(bone)
 
-        # remove orphened materials
         for mat in bpy.data.materials:
-            if mat.users == 0:
-                bpy.data.materials.remove(mat)
+            bpy.data.materials.remove(mat)
 
         for img in bpy.data.images:
-            if img.users == 0:
-                bpy.data.images.remove(img)
+            bpy.data.images.remove(img)
+
+        for bone in bpy.data.armatures:
+            bpy.data.armatures.remove(bone)
 
     if is_scene_modified:
         # bpy.context.space_data.clip_end = 15000
