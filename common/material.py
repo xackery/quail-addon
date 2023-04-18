@@ -67,6 +67,8 @@ def material_add(material_name, flags, shader):
 
 
 def material_property_add(root_path, material_name, property_name, property_value, property_category):
+    if material_name == "":
+        return
     material = bpy.data.materials[material_name]
 
     node_position = (0, 0)
