@@ -1,6 +1,6 @@
 import bpy
 import os
-from ..common.mesh_import import mesh_import
+from ...common.mesh_import import mesh_import
 
 
 def s3d_import(s3d_path):

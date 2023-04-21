@@ -1,6 +1,6 @@
 import bpy
 import os
-from ..common.mesh_import import mesh_import
+from ...common.mesh_import import mesh_import
 
 
 def eqg_import(eqg_path):
