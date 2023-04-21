@@ -14,3 +14,8 @@ build:
 	cd bin && zip quail-${VERSION}.zip quail-addon
 	rm -rf bin/quail-addon
 	sed -i '' 's/"version": (${COMMA_VERSION}),/"version": (1, 0, 0),/' __init__.py
+
+build-darwin:
+	@echo "build-darwin: packing and building"
+	@mkdir -p bin
+	cd /src/quail && make build-darwin && cp bin/quail-darwin-x64 quail-darwin

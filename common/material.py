@@ -11,9 +11,10 @@ def material_load(path: str, mesh: bpy.types.Mesh):
         lines.pop(0)
         for line in lines:
             records = line.split("|")
+            name = records[1].rstrip()
             if bpy.data.materials.get(records[1]) is None:
-                material_add(records[1], records[2], records[3])
-            mesh.materials.append(bpy.data.materials[records[1]])
+                material_add(name, records[2], records[3])
+            mesh.materials.append(bpy.data.materials[name])
 
 
 def material_property_load(root_path: str, path: str, mesh: bpy.types.Mesh):
@@ -36,7 +37,6 @@ def material_property_load(root_path: str, path: str, mesh: bpy.types.Mesh):
                     # skip first line
                     lines = anim_data.splitlines()
                     lines.pop(0)
-                    lines.pop(0)
                     for line in lines:
                         if records[2] == line:
                             continue
@@ -49,9 +49,9 @@ def material_property_load(root_path: str, path: str, mesh: bpy.types.Mesh):
                             print("adding anim material")
                             # add material
                             material_add(
-                                line, records[1], records[2])
+                                line, records[1], records[2].strip())
                             material_property_add(
-                                root_path, line, records[1], line+".dds", records[3])
+                                root_path, line, records[1].rstrip(), line.rstrip()+".dds", records[3].rstrip())
 
 
 def material_add(material_name, flags, shader):
@@ -59,6 +59,8 @@ def material_add(material_name, flags, shader):
     material.use_nodes = True
     material["flags"] = flags
     material["fx"] = shader
+    print(shader+"?")
+    print("foo")
     if shader == "Opaque_MaxCB1.fx":
         pass
     # set specular to 0

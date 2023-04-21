@@ -23,7 +23,8 @@ def mesh_import(root_path, path, is_visible) -> bool:
         # skip first line
         mesh_names.pop(0)
         for mesh_name in mesh_names:
-            obj = mesh_parse(root_path, path, mesh_name.rstrip(), is_visible)
+            obj = mesh_parse(root_path, path,
+                             mesh_name.rstrip(), is_visible)
             collection.objects.link(obj)
 
     if not is_visible:
@@ -87,15 +88,40 @@ def mesh_parse(root_path, path, name, is_visible) -> bpy.types.Object:
         vertices = list(triangle.vertices)
         i = 0
         for vertex in vertices:
-            uvlayer.data[triangle.loop_indices[i]].uv = mesh_uvs[vertex]
+            uvlayer.data[triangle.loop_indices[i]
+                         ].uv = mesh_uvs[vertex]
             i += 1
 
-        # populate mesh polygons
-        # set normal material index
+    # populate mesh polygons
+    # set normal material index
     for i in range(len(mesh.polygons)):
-        mesh.polygons[i].material_index = mesh_materials[i]
-        # mesh.polygons[i]["flags"] = mesh_flags[i]
+        poly = mesh.polygons[i]
+        poly.material_index = mesh_materials[i]
+        # new_map = "flag_%d" % mesh_flags[i]
+        # if new_map not in mesh.face_maps:
+        #    mesh.face_maps.new(name=new_map)
+        # face_map = mesh.face_maps[new_map]
+        # bpy.ops.object.face_map_assign()
+
+        # face_map.data. [poly.index].select = True
+
+    faces = {}
     obj = bpy.data.objects.new(name, mesh)
+    for i in range(len(mesh.polygons)):
+        poly = mesh.polygons[i]
+        poly.material_index = mesh_materials[i]
+        new_map = "flag_%d" % mesh_flags[i]
+        if new_map not in faces:
+            faces[new_map] = []
+        face_map = faces[new_map]
+        face_map.append(i)
+
+    for key in faces:
+        if key not in obj.face_maps:
+            face_map = obj.face_maps.new(name=key)
+        face_map = obj.face_maps[key]
+        face_map.add(faces[key])
+
     bone_parse(path, name, obj)
     return obj
 

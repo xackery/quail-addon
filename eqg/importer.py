@@ -7,7 +7,6 @@ def eqg_import(eqg_path):
     ext = os.path.splitext(eqg_path)[1]
     if ext != ".eqg":
         return
-    print("eqg detected")
 
     # set visibility of all objects if a zone
     is_visible = True
@@ -27,3 +26,5 @@ def eqg_import(eqg_path):
             is_visible = True
         if mesh_import(eqg_path, sub_path, is_visible) and is_visible:
             is_visible = False
+    # turn off edit mode
+    # bpy.ops.object.mode_set(mode='OBJECT')

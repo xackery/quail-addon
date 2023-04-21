@@ -47,7 +47,7 @@ def export_data(context, filepath: str):
         os.chmod(cmd, mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
     pfs_tmp = tempfile.gettempdir() + "/objtemp.obj"
 
-    path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/out/_it13926.eqg"
+    path = "/src/quail/cmd/blender/test/out/_it13926.eqg"
     start_time = time.time()
     print("Export to path", path)
     eqg_export(path)
@@ -81,23 +81,25 @@ def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modif
     start_time = time.time()
     print("Importing data...\n")
     path = ""
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_test.eqg"
+    # path = "/src/quail/cmd/blender/test/_test.eqg"
     # gnome on a stick
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it12095.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_sin.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_arena.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_bloodfields.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it13900.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_omensequip.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_pum_chr.s3d"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_zmf.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_xhf.eqg"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_shp_chr.s3d"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_arena.s3d"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_crushbone.s3d"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_gequip.s3d"
-    # path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_gequip6.s3d"
-    path = "/Users/xackery/Documents/code/projects/quail/cmd/blender/test/_it13926.eqg"
+    # path = "/src/quail/cmd/blender/test/_it12095.eqg"
+    # path = "/src/quail/cmd/blender/test/_sin.eqg"
+    # path = "/src/quail/cmd/blender/test/_arena.eqg"
+    # path = "/src/quail/cmd/blender/test/_bloodfields.eqg"
+    # path = "/src/quail/cmd/blender/test/_it13900.eqg"
+    # path = "/src/quail/cmd/blender/test/_omensequip.eqg"
+    # path = "/src/quail/cmd/blender/test/_pum_chr.s3d"
+    # path = "/src/quail/cmd/blender/test/_zmf.eqg"
+    # path = "/src/quail/cmd/blender/test/_xhf.eqg"
+    # path = "/src/quail/cmd/blender/test/_shp_chr.s3d"
+    # path = "/src/quail/cmd/blender/test/_arena.s3d"
+    # path = "/src/quail/cmd/blender/test/_crushbone.s3d"
+    # path = "/src/quail/cmd/blender/test/_gequip.s3d"
+    # path = "/src/quail/cmd/blender/test/_gequip6.s3d"
+    # path = "/src/quail/cmd/blender/test/_sin.eqg"
+    path = "/src/quail/cmd/blender/test/_it13926.eqg"
+
     if path == "":
         print("quail blender export %s %s" % (filepath, pfs_tmp))
         process = subprocess.run(
@@ -140,6 +142,12 @@ def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modif
     if path == "":
         base_name = os.path.basename(filepath)
         path = pfs_tmp+"/_"+base_name
+
+    # check if path exists
+    if not os.path.exists(path):
+        show_message_box("File does not exist",
+                         "Quail Error", 'ERROR')
+
     eqg_import(path)
     s3d_import(path)
     for img in bpy.data.images:
@@ -168,7 +176,7 @@ class ExportQuail(Operator, ExportHelper):
 
     def execute(self, context):
         return export_data(context,
-                           self.filepath)
+                           self.filepath)  # type: ignore
 
 
 class ImportQuail(Operator, ExportHelper):
@@ -199,7 +207,7 @@ class ImportQuail(Operator, ExportHelper):
 
     def execute(self, context):
         return import_data(context,
-                           self.filepath,
+                           self.filepath,  # type: ignore
                            self.is_scene_cleared,
                            self.is_scene_modified)
 
