@@ -59,8 +59,6 @@ def material_add(material_name, flags, shader):
     material.use_nodes = True
     material["flags"] = flags
     material["fx"] = shader
-    print(shader+"?")
-    print("foo")
     if shader == "Opaque_MaxCB1.fx":
         pass
     # set specular to 0
