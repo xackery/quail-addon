@@ -18,4 +18,5 @@ build:
 build-darwin:
 	@echo "build-darwin: packing and building"
 	@mkdir -p bin
-	cd /src/quail && make build-darwin && cp bin/quail-darwin-x64 quail-darwin
+	cd /src/quail && make build-darwin
+	cp /src/quail/bin/quail-darwin-x64 quail-darwin

@@ -32,9 +32,8 @@ bl_info = {
 }
 
 
-def export_data(context, filepath: str):
+def quail_run(operation: str, is_dev: bool, arg1: str, arg2: str, pfs_tmp: str) -> str:
     cmd = bpy.utils.user_resource('SCRIPTS') + "/addons/quail-addon/quail"
-    # add suffix based on platform
     if sys.platform == "win32":
         cmd += ".exe"
     if sys.platform == "linux":
@@ -45,41 +44,76 @@ def export_data(context, filepath: str):
     mode = os.stat(cmd).st_mode
     if mode != 33261:
         os.chmod(cmd, mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-    pfs_tmp = tempfile.gettempdir() + "/objtemp.obj"
 
-    path = "/src/quail/cmd/blender/test/out/_it13926.eqg"
+    verbose = ""
+    if is_dev:
+        verbose = "-v"
+    print("quail blender %s %s %s %s" % (operation, verbose, arg1, arg2))
+
+    args = [cmd, "blender", operation, arg1, arg2]
+    if is_dev:
+        args = [cmd, "blender", "-v", operation, arg1, arg2]
+    process = subprocess.run(
+        args, capture_output=True, text=True)
+    print(process.stdout)
+    if process.returncode == 0:
+        return ""
+    lines = process.stdout.splitlines()
+    if len(lines) > 0:
+        return lines[-1]
+    return process.stdout
+
+
+def export_data(context, filepath: str):
+
+    # get base of filepath
+    base_name = os.path.basename(filepath)
+
+    pfs_tmp = tempfile.gettempdir() + "/quail/_"+base_name
+    path = ""
+    # path = "/src/quail/cmd/blender/test/out/_it13926.eqg"
     start_time = time.time()
-    print("Export to path", path)
+
+    is_dev = path != ""
+    if not is_dev:
+        path = pfs_tmp
+
+    print("Prepping temp data at %s...\n" % pfs_tmp)
     eqg_export(path)
+
+    print("Exporting data...\n")
+    if not is_dev:
+        is_dev = True
+        result = quail_run("import", is_dev, path, filepath, pfs_tmp)
+        if result != "":
+            # if os.path.exists(pfs_tmp):
+            #    print("removing cache")
+            #    shutil.rmtree(pfs_tmp)
+            msg = "Quail Failed: " + result
+            print(msg)
+            show_message_box(msg,
+                             "Quail Error", 'ERROR')
+            return {'CANCELLED'}
+
     print("Finished in ", time.time() - start_time, " seconds")
     if os.path.exists(pfs_tmp):
-        os.remove(pfs_tmp)
+        print("removing cache")
+        shutil.rmtree(pfs_tmp)
     return {'FINISHED'}
 
 
 def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modified: bool = True):
-    cmd = bpy.utils.user_resource('SCRIPTS') + "/addons/quail-addon/quail"
-    # add suffix based on platform
-    if sys.platform == "win32":
-        cmd += ".exe"
-    if sys.platform == "linux":
-        cmd += "-linux"
-    if sys.platform == "darwin":
-        cmd += "-darwin"
-
-    show_message_box()
-    mode = os.stat(cmd).st_mode
-    if mode != 33261:
-        os.chmod(cmd, mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
     # check if file exists
     if not os.path.exists(filepath):
         filepath = filepath.replace(".eqg", ".s3d")
 
+    base_name = os.path.basename(filepath)
+
     # get base of filepath
-    pfs_tmp = tempfile.gettempdir() + "/" + os.path.basename(filepath)
+    pfs_tmp = tempfile.gettempdir() + "/quail/_" + base_name
     start_time = time.time()
-    print("Importing data...\n")
+    print("Importing %s to %s...\n" % (base_name, pfs_tmp))
     path = ""
     # path = "/src/quail/cmd/blender/test/_test.eqg"
     # gnome on a stick
@@ -98,17 +132,19 @@ def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modif
     # path = "/src/quail/cmd/blender/test/_gequip.s3d"
     # path = "/src/quail/cmd/blender/test/_gequip6.s3d"
     # path = "/src/quail/cmd/blender/test/_sin.eqg"
-    path = "/src/quail/cmd/blender/test/_it13926.eqg"
+    # path = "/src/quail/cmd/blender/test/_it13926.eqg"
 
-    if path == "":
-        print("quail blender export %s %s" % (filepath, pfs_tmp))
-        process = subprocess.run(
-            [cmd, "blender", "export", filepath, pfs_tmp])
-        if process.returncode != 0:
+    is_dev = path != ""
+
+    if not is_dev:
+        is_dev = True
+        result = quail_run("export", is_dev, filepath, pfs_tmp, pfs_tmp)
+        if result != "":
             if os.path.exists(pfs_tmp):
                 shutil.rmtree(pfs_tmp)
-            # capture process error
-            show_message_box("Failed to process in quail",
+            msg = "Quail Failed: " + result
+            print(msg)
+            show_message_box(msg,
                              "Quail Error", 'ERROR')
             return {'CANCELLED'}
 
@@ -154,6 +190,7 @@ def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modif
         if img.users > 0 and os.path.exists(img.filepath):
             img.pack()
     if os.path.exists(pfs_tmp):
+        print("removing cache")
         shutil.rmtree(pfs_tmp)
     print("Finished in ", time.time() - start_time, " seconds")
 
