@@ -2,6 +2,18 @@ import bpy
 import os
 
 
+def material_find(material_name: str) -> bpy.types.Material:
+    if material_name == "":
+        return bpy.data.materials[0]
+    idx = bpy.data.materials.find(material_name)
+    if idx == -1:
+        idx = bpy.data.materials.find(material_name.lower())
+        if idx == -1:
+            print("material not found: "+material_name)
+            return bpy.data.materials[0]
+    return bpy.data.materials[idx]
+
+
 def material_load(path: str, mesh: bpy.types.Mesh):
     if not os.path.exists(path+"/material.txt"):
         return
@@ -31,7 +43,7 @@ def material_property_load(root_path: str, path: str, mesh: bpy.types.Mesh):
             if records[1] == "e_TextureDiffuse0" and records[2][-4:] == ".dds" and os.path.exists(root_path+"/"+records[2][:-4]+".txt"):
                 with open(root_path+"/"+records[2][:-4]+".txt") as f:
                     anim_data = f.read()
-                    material = bpy.data.materials[records[0]]
+                    material = material_find(records[0])
                     material["anim_data"] = anim_data
                     # iterate anim_data line by line
                     # skip first line
@@ -69,7 +81,7 @@ def material_add(material_name, flags, shader):
 def material_property_add(root_path, material_name, property_name, property_value, property_category):
     if material_name == "":
         return
-    material = bpy.data.materials[material_name]
+    material = material_find(material_name)
 
     node_position = (0, 0)
     bsdf_index = -1
