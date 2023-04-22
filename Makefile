@@ -13,7 +13,7 @@ build:
 	find . | grep -E "(/__pycache__$|\.pyc$|\.pyo$)" | xargs rm -rf
 	cp quail.exe LICENSE README.md *.py bin/quail-addon
 	cp -r converter common auto_load bin/quail-addon
-	cd bin && zip quail-${VERSION}.zip quail-addon
+	cd bin && zip -r quail-${VERSION}.zip quail-addon
 	rm -rf bin/quail-addon
 	sed -i '' 's/"version": (${COMMA_VERSION}),/"version": (1, 0, 0),/' __init__.py
 
