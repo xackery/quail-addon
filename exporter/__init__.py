@@ -5,14 +5,9 @@ import bpy
 import os
 import time
 import tempfile
-from .. import quail
-from ...common import dialogue
+from ..common import dialog, quail
 import shutil
-from . import eqg_exporter as eqg_exporter
-from . import s3d_exporter as s3d_exporter
-
-dev_path = ""
-# dev_path = "/src/quail/cmd/blender/test/_it13926.eqg"
+from . import quail_export as quail_export
 
 
 def register():
@@ -50,38 +45,28 @@ def menu_func_export(self, context):
 
 
 def export_data(context, filepath: str):
+    start_time = time.time()
 
     # get base of filepath
     base_name = os.path.basename(filepath)
 
-    pfs_tmp = tempfile.gettempdir() + "/quail/_"+base_name
-    path = ""
-    # path = "/src/quail/cmd/blender/test/out/_it13926.eqg"
-    start_time = time.time()
+    base_name = os.path.splitext(base_name)[0]
 
-    is_dev = path != ""
-    if not is_dev:
-        path = pfs_tmp
+    pfs_tmp = tempfile.gettempdir() + "/quail/"+base_name + ".quail"
 
     print("Prepping temp data at %s...\n" % pfs_tmp)
-    eqg_exporter.eqg_export(path)
+    quail_export.quail_export(pfs_tmp)
 
-    print("Exporting data...\n")
-    if not is_dev:
-        is_dev = True
-        result = quail.run("import", is_dev, path, filepath, pfs_tmp)
-        if result != "":
-            # if os.path.exists(pfs_tmp):
-            #    print("removing cache")
-            #    shutil.rmtree(pfs_tmp)
-            msg = "Quail Failed: " + result
-            print(msg)
-            dialogue.message_box(msg,
-                                 "Quail Error", 'ERROR')
-            return {'CANCELLED'}
+    result = quail.run("convert", pfs_tmp, filepath)
+    if result != "":
+        msg = "Quail Failed: " + result
+        print(msg)
+        dialog.message_box(msg,
+                           "Quail Error", 'ERROR')
+        return {'CANCELLED'}
 
-    print("Finished in ", time.time() - start_time, " seconds")
     if os.path.exists(pfs_tmp):
-        print("removing cache")
-        shutil.rmtree(pfs_tmp)
+        print("Removing cache")
+        # shutil.rmtree(pfs_tmp)
+    print("Finished in ", time.time() - start_time, " seconds")
     return {'FINISHED'}

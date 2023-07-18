@@ -1,4 +1,4 @@
-VERSION ?= 2.0.5
+VERSION ?= 2.0.7
 
 comma := ,
 COMMA_VERSION := $(subst .,${comma} ,${VERSION})
@@ -21,4 +21,4 @@ build-darwin:
 	@echo "build-darwin: packing and building"
 	@mkdir -p bin
 	cd /src/quail && make build-darwin
-	cp /src/quail/bin/quail-darwin-x64 quail-darwin
+	cp /src/quail/bin/quail-darwin quail-darwin

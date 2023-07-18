@@ -1,4 +1,4 @@
-from . import converter
+from . import exporter, importer
 from . import auto_load
 
 auto_load.init()
@@ -15,12 +15,14 @@ bl_info = {
 
 
 def register():
-    converter.register()
+    exporter.register()
+    importer.register()
     auto_load.register()
 
 
 def unregister():
-    converter.unregister()
+    exporter.unregister()
+    importer.unregister()
     auto_load.unregister()
 
 

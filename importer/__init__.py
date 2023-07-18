@@ -5,14 +5,9 @@ import bpy
 import os
 import time
 import tempfile
-from .. import quail
-from ...common import dialogue
+from ..common import dialog, quail
 import shutil
-from . import eqg_importer as eqg_importer
-from . import s3d_importer as s3d_importer
-
-dev_path = ""
-# dev_path = "/src/quail/cmd/blender/test/_it13926.eqg"
+from . import quail_import
 
 
 def register():
@@ -72,43 +67,16 @@ def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modif
     base_name = os.path.basename(filepath)
 
     # get base of filepath
-    pfs_tmp = tempfile.gettempdir() + "/quail/_" + base_name
+    pfs_tmp = tempfile.gettempdir() + "/quail/" + base_name + ".quail"
     start_time = time.time()
-    print("Importing %s to %s...\n" % (base_name, pfs_tmp))
-    path = ""
-    # path = "/src/quail/cmd/blender/test/_test.eqg"
-    # gnome on a stick
-    # path = "/src/quail/cmd/blender/test/_it12095.eqg"
-    # path = "/src/quail/cmd/blender/test/_sin.eqg"
-    # path = "/src/quail/cmd/blender/test/_arena.eqg"
-    # path = "/src/quail/cmd/blender/test/_bloodfields.eqg"
-    # path = "/src/quail/cmd/blender/test/_it13900.eqg"
-    # path = "/src/quail/cmd/blender/test/_omensequip.eqg"
-    # path = "/src/quail/cmd/blender/test/_pum_chr.s3d"
-    # path = "/src/quail/cmd/blender/test/_zmf.eqg"
-    # path = "/src/quail/cmd/blender/test/_xhf.eqg"
-    # path = "/src/quail/cmd/blender/test/_shp_chr.s3d"
-    # path = "/src/quail/cmd/blender/test/_arena.s3d"
-    # path = "/src/quail/cmd/blender/test/_crushbone.s3d"
-    # path = "/src/quail/cmd/blender/test/_gequip.s3d"
-    # path = "/src/quail/cmd/blender/test/_gequip6.s3d"
-    # path = "/src/quail/cmd/blender/test/_sin.eqg"
-    # path = "/src/quail/cmd/blender/test/_it13926.eqg"
 
-    is_dev = path != ""
-
-    if not is_dev:
-        is_dev = True
-        result = quail.run(
-            "export", is_dev, filepath, pfs_tmp, pfs_tmp)
-        if result != "":
-            if os.path.exists(pfs_tmp):
-                shutil.rmtree(pfs_tmp)
-            msg = "Quail Failed: " + result
-            print(msg)
-            dialogue.message_box(msg,
-                                 "Quail Error", 'ERROR')
-            return {'CANCELLED'}
+    result = quail.run("convert", filepath, pfs_tmp)
+    if result != "":
+        msg = "Quail Failed: " + result
+        print(msg)
+        dialog.message_box(msg,
+                           "Quail Error", 'ERROR')
+        return {'CANCELLED'}
 
     if is_scene_cleared:
         for collection in bpy.data.collections:
@@ -137,23 +105,27 @@ def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modif
         # bpy.context.space_data.clip_end = 15000
         pass
 
-    if path == "":
-        base_name = os.path.basename(filepath)
-        path = pfs_tmp+"/_"+base_name
+    base_name = os.path.basename(filepath)
+    path = pfs_tmp
 
+    print("Checking for", path)
     # check if path exists
     if not os.path.exists(path):
-        dialogue.message_box("File does not exist",
-                             "Quail Error", 'ERROR')
+        dialog.message_box("File does not exist",
+                           "Quail Error", 'ERROR')
 
-    eqg_importer.eqg_import(path)
-    s3d_importer.s3d_import(path)
+    quail_import.quail_import(path)
     for img in bpy.data.images:
         if img.users > 0 and os.path.exists(img.filepath):
             img.pack()
-    if os.path.exists(pfs_tmp):
-        print("removing cache")
-        shutil.rmtree(pfs_tmp)
-    print("Finished in ", time.time() - start_time, " seconds")
+    # if os.path.exists(pfs_tmp):
+    #    print("removing cache")
+    #    shutil.rmtree(pfs_tmp)
+
+    if bpy.context.mode != 'OBJECT':
+        bpy.ops.object.mode_set(mode='OBJECT')
+    print("Full path: %s" % pfs_tmp)
+    print("Importing %s took %s seconds" %
+          (base_name, time.time() - start_time))
 
     return {'FINISHED'}
