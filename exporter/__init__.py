@@ -68,5 +68,10 @@ def export_data(context, filepath: str):
     if os.path.exists(pfs_tmp):
         print("Removing cache")
         # shutil.rmtree(pfs_tmp)
+    # remove orphened scene materials
+    for mat in bpy.data.materials:
+        if mat.users == 0:
+            bpy.data.materials.remove(mat)
+
     print("Finished in ", time.time() - start_time, " seconds")
     return {'FINISHED'}

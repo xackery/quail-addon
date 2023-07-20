@@ -60,6 +60,7 @@ def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, root_obj) -> bpy.ty
             lines = f.readlines()
             # skip first line
             lines.pop(0)
+
             for line in lines:
                 records = line.split("|")
                 normal_line = records[0].split(",")
@@ -84,9 +85,6 @@ def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, root_obj) -> bpy.ty
     mesh.update(calc_edges=True)
 
     uvlayer = mesh.uv_layers.new(name=mesh_name+"_uv")
-    # for vert in mesh.vertices:
-    # print(vert.co, vert.index, mesh_uvs[vert.index])
-    # uvlayer.data[vert.index].uv = mesh_uvs[vert.index]
 
     # for face in mesh.polygons:
     #    for vert_index, loop_index in zip(face.vertices, face.loop_indices):

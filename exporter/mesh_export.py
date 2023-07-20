@@ -28,14 +28,19 @@ def mesh_object_export(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy
         uv = mesh.uv_layers[0].data
         for i in range(len(mesh.vertices)):
             vert = mesh.vertices[i]
+            # position
             vw.write("%0.8f,%0.8f,%0.8f|" %
                      (vert.co.x, vert.co.y, vert.co.z))  # type: ignore
+            # normal
             vw.write("%0.8f,%0.8f,%0.8f|" %
                      (vert.normal.x, vert.normal.y, vert.normal.z))  # type: ignore
+            # uv
             vw.write("%0.8f,%0.8f|" %
                      (uv[i].uv.x, uv[i].uv.y))  # type: ignore
+            # uv 2
             vw.write("%0.8f,%0.8f|" %
                      (0, 0))
+            # tint
             vw.write("%d,%d,%d,%d\n" %
                      (120, 120, 120, 255))
 

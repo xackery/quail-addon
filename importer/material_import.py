@@ -38,6 +38,15 @@ def material_property_load(root_path: str, mesh_name: str, material_name: str) -
         lines.pop(0)  # skip first line
         for line in lines:
             records = line.split("|")
+            if records[0] == "shaderName":
+                idx = material_find(material_name)
+                if idx == -1:
+                    print("material not found: "+material_name)
+                    continue
+                material = bpy.data.materials[idx]
+                material["fx"] = records[1]
+                continue
+
             material_property_add(
                 root_path, mesh_name, material_name, records[0], records[1], records[2])
             # if records[0] == "e_TextureDiffuse0" and records[1][-4:] == ".dds" and os.path.exists(root_path+"/"+records[1][:-4]+".txt"):
