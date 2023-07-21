@@ -31,58 +31,44 @@ def mesh_import(quail_path, mesh_path, is_visible) -> bool:
 
 
 def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, root_obj) -> bpy.types.Object:
+    # == Mesh ==
     mesh = bpy.data.meshes.new(mesh_name+"_mesh")
     print(">> Mesh", mesh_name)
     mesh_verts = []
     mesh_uvs = []
-    cur_path = "%s/vertex.txt" % mesh_path
-    if os.path.exists(cur_path):
-        with open(cur_path) as f:
-            lines = f.readlines()
-            # skip first line
-            lines.pop(0)
-            for line in lines:
-                records = line.split("|")
-                vert_line = records[0].split(",")
-                mesh_verts.append((float(vert_line[0]), float(
-                    vert_line[1]), float(vert_line[2])))
-                uv_line = records[2].split(",")
-                mesh_uvs.append((float(uv_line[0]), float(uv_line[1])))
-    # uv_mesh.reverse()
+
+    verts = vertex_load("%s/vertex.txt" % mesh_path)
+    for vert in verts:
+        mesh_verts.append(
+            (vert["position.x"], vert["position.y"], vert["position.z"]))
+        # (vert["position.y"], -vert["position.x"], vert["position.z"]))
+        mesh_uvs.append((vert["uv.x"], vert["uv.y"]))
+
+    # mesh_uvs.reverse()
 
     mesh_materials = []
     mesh_normals = []
     mesh_flags = []
-    cur_path = "%s/triangle.txt" % mesh_path
     mesh_added_materials = {}
-    if os.path.exists(cur_path):
-        with open(cur_path) as f:
-            lines = f.readlines()
-            # skip first line
-            lines.pop(0)
-
-            for line in lines:
-                records = line.split("|")
-                normal_line = records[0].split(",")
-                mesh_normals.append((int(normal_line[0]), int(
-                    normal_line[1]), int(normal_line[2])))
-                mesh_flags.append(int(records[1]))
-                idx = bpy.data.materials.find(records[2].rstrip())
-                if idx == -1:
-                    # print("Could not find material: " + records[2].rstrip())
-                    idx = 0
-                    if len(mesh_added_materials) == 0:
-                        continue
-                # print(records[2].rstrip()+": " +
-                #      str(bpy.data.materials.find(records[2].rstrip())))
-                if mesh_added_materials.get(idx) == None:
-                    mesh_added_materials[idx] = True
-                    mesh.materials.append(bpy.data.materials[idx])
-                mesh_materials.append(idx)
-
+    triangles = triangle_load("%s/triangle.txt" % mesh_path)
+    for triangle in triangles:
+        mesh_normals.append(
+            (triangle["index.x"], triangle["index.y"], triangle["index.z"]))
+        mesh_flags.append(triangle["flag"])
+        idx = bpy.data.materials.find(triangle["material_name"])
+        if idx == -1:
+            idx = 0
+            if len(mesh_added_materials) == 0:
+                continue
+        if mesh_added_materials.get(idx) == None:
+            mesh_added_materials[idx] = True
+            mesh.materials.append(bpy.data.materials[idx])
+        mesh_materials.append(idx)
     # assign material to mesh
     mesh.from_pydata(mesh_verts, [], mesh_normals)
     mesh.update(calc_edges=True)
+
+    # == UV mapping ==
 
     uvlayer = mesh.uv_layers.new(name=mesh_name+"_uv")
 
@@ -93,9 +79,9 @@ def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, root_obj) -> bpy.ty
     for triangle in mesh.polygons:
         vertices = list(triangle.vertices)
         i = 0
-        index = triangle.loop_indices[i]
         for vertex in vertices:
-            uvlayer.data[index].uv = mesh_uvs[vertex]
+            uvlayer.data[triangle.loop_indices[i]].uv = (mesh_uvs[vertex]
+                                                         [0], mesh_uvs[vertex][1])
             i += 1
 
     # populate mesh polygons
@@ -132,6 +118,7 @@ def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, root_obj) -> bpy.ty
         face_map = mesh_obj.face_maps[key]
         face_map.add(faces[key])
 
+    # parent mesh to root object (rig)
     if root_obj != None:
         mesh_obj.name = mesh_name+"_mesh"
         mesh_obj.parent = root_obj
@@ -161,17 +148,10 @@ def bone_parse(quail_path, mesh_path, mesh_name, is_visible, root_obj) -> bpy.ty
 
     bone_obj = bpy.data.objects.new(name="root", object_data=arm)
 
-    bones = []
+    bones = bone_load(cur_path)
 
     # collection.objects.link(bone_obj)
 
-    with open(cur_path) as f:
-        lines = f.readlines()
-        lines.pop(0)
-        for _, line in enumerate(lines):
-            records = line.split("|")
-            bones.append({'name': records[0], 'child_index': int(records[1]), 'children_count': int(records[2]), 'next': int(records[3]), 'pivot': string_to_vector(
-                records[4]), 'rotation': string_to_quaternion(records[5]), 'scale': string_to_vector(records[6])})
     if not bones:
         return rig_obj
 
@@ -305,45 +285,42 @@ def particle_point_parse(quail_path, mesh_path, mesh_name, root_obj):
     # bpy.ops.object.mode_set(mode='POSE', toggle=False)
     # bpy.context.evaluated_depsgraph_get().update()
 
-    with open(cur_path) as f:
-        lines = f.readlines()
-        lines.pop(0)
-        for _, line in enumerate(lines):
-            # deselect all
+    name, points = particle_point_load(cur_path)
+    print("name: %s" % name)
+    for pt in points:
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+        print(">> ParticlePoint %s" % pt["name"])
+        # create a new empty mesh and the object.
+        point = bpy.data.objects.new(name=pt["name"], object_data=None)
+        bpy.context.collection.objects.link(point)
 
-            bpy.ops.object.mode_set(mode='OBJECT')
-            bpy.ops.object.select_all(action='DESELECT')
-            records = line.split("|")
-            print(">> ParticlePoint %s" % records[0])
-            # create a new empty mesh and the object.
-            point = bpy.data.objects.new(name=records[0], object_data=None)
-            bpy.context.collection.objects.link(point)
+        point.empty_display_type = 'CUBE'
+        point.empty_display_size = 2
 
-            point.empty_display_type = 'CUBE'
-            point.empty_display_size = 2
+        arm = bpy.data.objects['%s' % mesh_name]
+        arm.select_set(True)
+        bpy.context.view_layer.objects.active = arm
+        bpy.ops.object.mode_set(mode='EDIT')
+        arm.data.edit_bones.active = arm.data.edit_bones[pt["bone"]]
 
-            arm = bpy.data.objects['%s' % mesh_name]
-            arm.select_set(True)
-            bpy.context.view_layer.objects.active = arm
-            bpy.ops.object.mode_set(mode='EDIT')
-            arm.data.edit_bones.active = arm.data.edit_bones[records[1]]
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+        point.select_set(True)
+        arm.select_set(True)
+        bpy.context.view_layer.objects.active = arm
+        bpy.ops.object.parent_set(type='BONE', keep_transform=False)
+        print("setting parent")
+        # point.parent = root_obj
+        # point.parent_type = "BONE"
+        # print(root_obj.pose.bones.keys())
+        # rig.pose.bones[records[1]]
+        # bone = rig.pose.bones[]
+        # point.parent_bone = records[1]
 
-            bpy.ops.object.mode_set(mode='OBJECT')
-            bpy.ops.object.select_all(action='DESELECT')
-            point.select_set(True)
-            arm.select_set(True)
-            bpy.context.view_layer.objects.active = arm
-            bpy.ops.object.parent_set(type='BONE', keep_transform=False)
-            print("setting parent")
-
-            # point.parent = root_obj
-            # point.parent_type = "BONE"
-            # print(root_obj.pose.bones.keys())
-            # rig.pose.bones[records[1]]
-            # bone = rig.pose.bones[]
-            # point.parent_bone = records[1]
     bpy.ops.object.mode_set(mode='OBJECT')
-    bpy.ops.object.select_all(action='DESELECT')  # deselect all objects
+    bpy.ops.object.select_all(action='DESELECT')  # deselect all object
+    bpy.context.view_layer.objects.active = None  # remove active object
 
 
 def string_to_vector(line: str) -> Vector:
@@ -355,3 +332,101 @@ def string_to_vector(line: str) -> Vector:
 def string_to_quaternion(line: str) -> Quaternion:
     lines = line.split(",")
     return Quaternion((float(lines[0]), float(lines[1]), float(lines[2]), float(lines[3])))
+
+
+def vertex_load(path: str) -> list:
+    verts = []
+    with open(path) as f:
+        lines = f.readlines()
+        # skip first line
+        lines.pop(0)
+        for line in lines:
+            records = line.split("|")
+            pos_line = records[0].split(",")
+            norm_line = records[1].split(",")
+            uv_line = records[2].split(",")
+            uv2_line = records[3].split(",")
+            tint_line = records[4].split(",")
+            verts.append({
+                "position.x": float(pos_line[0]),
+                "position.y": float(pos_line[1]),
+                "position.z": float(pos_line[2]),
+                "normal.x": float(norm_line[0]),
+                "normal.y": float(norm_line[1]),
+                "normal.z": float(norm_line[2]),
+                "uv.x": float(uv_line[0]),
+                "uv.y": float(uv_line[1]),
+                "uv2.x": float(uv2_line[0]),
+                "uv2.y": float(uv2_line[1]),
+                "tint.r": float(tint_line[0]),
+                "tint.g": float(tint_line[1]),
+                "tint.b": float(tint_line[2]),
+                "tint.a": float(tint_line[3]),
+            })
+    return verts
+
+
+def triangle_load(path: str) -> list:
+    triangles = []
+    with open(path) as f:
+        lines = f.readlines()
+        # skip first line
+        lines.pop(0)
+        for line in lines:
+            records = line.split("|")
+            index = records[0].split(",")
+
+            triangles.append({
+                "index.x": int(index[0]),
+                "index.y": int(index[1]),
+                "index.z": int(index[2]),
+                "flag": int(records[1]),
+                "material_name": records[2].rstrip(),
+            })
+    return triangles
+
+
+def bone_load(path: str) -> list:
+    bones = []
+    with open(path) as f:
+        lines = f.readlines()
+        # skip first line
+        lines.pop(0)
+        for line in lines:
+            records = line.split("|")
+            bone = {
+                "name": records[0],
+                "child_index": int(records[1]),
+                "children_count": int(records[2]),
+                "next": int(records[3]),
+                "pivot": string_to_vector(records[4]),
+                "rotation": string_to_quaternion(records[5]),
+                "scale": string_to_vector(records[6]),
+            }
+            # x = bone["pivot"].x
+            # bone["pivot"].x = bone["pivot"].y
+            # bone["pivot"].y = -x
+            bones.append(bone)
+    return bones
+
+
+def particle_point_load(path: str) -> tuple[str, list]:
+    points = []
+    name = ""
+    with open(path) as f:
+        lines = f.readlines()
+        # skip first line
+        lines.pop(0)
+        for line in lines:
+            records = line.split("|")
+            if records[0] == "id":
+                name = records[1].rstrip()
+                continue
+            points.append({
+                "name": records[0],
+                "bone": records[1],
+                "translation": string_to_vector(records[2]),
+                "rotation": string_to_vector(records[3]),
+                "scale": string_to_vector(records[4]),
+            })
+    return name, points

@@ -8,6 +8,7 @@ import tempfile
 from ..common import dialog, quail
 import shutil
 from . import quail_import
+from bpy_extras.wm_utils.progress_report import ProgressReport
 
 
 def register():
@@ -59,73 +60,75 @@ def menu_func_import(self, context):
 
 
 def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modified: bool = True):
+    with ProgressReport(context.window_manager) as progress:  # type: ignore
+        progress.enter_substeps(2, "Generating quail...")
+        # check if file exists
+        if not os.path.exists(filepath):
+            filepath = filepath.replace(".eqg", ".s3d")
 
-    # check if file exists
-    if not os.path.exists(filepath):
-        filepath = filepath.replace(".eqg", ".s3d")
+        base_name = os.path.basename(filepath)
 
-    base_name = os.path.basename(filepath)
+        # get base of filepath
+        pfs_tmp = tempfile.gettempdir() + "/quail/" + base_name + ".quail"
+        start_time = time.time()
 
-    # get base of filepath
-    pfs_tmp = tempfile.gettempdir() + "/quail/" + base_name + ".quail"
-    start_time = time.time()
+        result = quail.run("convert", filepath, pfs_tmp)
+        if result != "":
+            msg = "Quail Failed: " + result
+            print(msg)
+            dialog.message_box(msg,
+                               "Quail Error", 'ERROR')
+            return {'CANCELLED'}
+        progress.step()
 
-    result = quail.run("convert", filepath, pfs_tmp)
-    if result != "":
-        msg = "Quail Failed: " + result
-        print(msg)
-        dialog.message_box(msg,
-                           "Quail Error", 'ERROR')
-        return {'CANCELLED'}
+        if is_scene_cleared:
+            for collection in bpy.data.collections:
+                bpy.data.collections.remove(collection)
 
-    if is_scene_cleared:
-        for collection in bpy.data.collections:
-            bpy.data.collections.remove(collection)
+            for mesh in bpy.data.meshes:
+                bpy.data.meshes.remove(mesh)
 
-        for mesh in bpy.data.meshes:
-            bpy.data.meshes.remove(mesh)
+            # remove orphed objects
+            for obj in bpy.data.objects:
+                bpy.data.objects.remove(obj)
 
-        # remove orphed objects
-        for obj in bpy.data.objects:
-            bpy.data.objects.remove(obj)
+            for bone in bpy.data.armatures:
+                bpy.data.armatures.remove(bone)
 
-        for bone in bpy.data.armatures:
-            bpy.data.armatures.remove(bone)
+            for mat in bpy.data.materials:
+                bpy.data.materials.remove(mat)
 
-        for mat in bpy.data.materials:
-            bpy.data.materials.remove(mat)
+            for img in bpy.data.images:
+                bpy.data.images.remove(img)
 
+            for bone in bpy.data.armatures:
+                bpy.data.armatures.remove(bone)
+
+        if is_scene_modified:
+            # bpy.context.space_data.clip_end = 15000
+            pass
+
+        base_name = os.path.basename(filepath)
+        path = pfs_tmp
+
+        print("Checking for", path)
+        # check if path exists
+        if not os.path.exists(path):
+            dialog.message_box("File does not exist",
+                               "Quail Error", 'ERROR')
+
+        quail_import.quail_import(path)
         for img in bpy.data.images:
-            bpy.data.images.remove(img)
+            if img.users > 0 and os.path.exists(img.filepath):
+                img.pack()
+        # if os.path.exists(pfs_tmp):
+        #    print("removing cache")
+        #    shutil.rmtree(pfs_tmp)
 
-        for bone in bpy.data.armatures:
-            bpy.data.armatures.remove(bone)
-
-    if is_scene_modified:
-        # bpy.context.space_data.clip_end = 15000
-        pass
-
-    base_name = os.path.basename(filepath)
-    path = pfs_tmp
-
-    print("Checking for", path)
-    # check if path exists
-    if not os.path.exists(path):
-        dialog.message_box("File does not exist",
-                           "Quail Error", 'ERROR')
-
-    quail_import.quail_import(path)
-    for img in bpy.data.images:
-        if img.users > 0 and os.path.exists(img.filepath):
-            img.pack()
-    # if os.path.exists(pfs_tmp):
-    #    print("removing cache")
-    #    shutil.rmtree(pfs_tmp)
-
-    if bpy.context.mode != 'OBJECT':
-        bpy.ops.object.mode_set(mode='OBJECT')
-    print("Full path: %s" % pfs_tmp)
-    print("Importing %s took %s seconds" %
-          (base_name, time.time() - start_time))
-
-    return {'FINISHED'}
+        if bpy.context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+        print("Full path: %s" % pfs_tmp)
+        print("Importing %s took %s seconds" %
+              (base_name, time.time() - start_time))
+        progress.leave_substeps("Finished!")
+        return {'FINISHED'}

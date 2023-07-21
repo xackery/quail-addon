@@ -1,9 +1,10 @@
 import bpy
 import os
 from .material_export import material_export
+import bmesh
 
 
-def mesh_export(quail_path):
+def mesh_export(quail_path, is_triangulate: bool):
 
     # for collection in bpy.data.collections:
     #    is_created = False
@@ -12,45 +13,66 @@ def mesh_export(quail_path):
         if obj.type != "MESH":
             continue
         os.makedirs(mesh_path)
-        mesh_object_export(quail_path, mesh_path, obj.name, obj)
+        mesh_object_export(quail_path, mesh_path,
+                           obj.name, obj, is_triangulate)
 
 
-def mesh_object_export(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy.types.Object):
-    mesh = obj.to_mesh()
-    material_export(quail_path, mesh_path, mesh.materials)
+def mesh_object_export(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy.types.Object, is_triangulate: bool):
+
     print("> Object", mesh_name)
     print(">> Mesh", mesh_name)
-    with open("%s/vertex.txt" % mesh_path, "w") as vw:
-        vw.write("position|normal|uv|uv2|tint\n")
-        mesh.uv_layers.active = mesh.uv_layers[0]
-        mesh.uv_layers.active_index = 0
-        mesh.uv_layers[0].active_render = True
-        uv = mesh.uv_layers[0].data
-        for i in range(len(mesh.vertices)):
-            vert = mesh.vertices[i]
-            # position
-            vw.write("%0.8f,%0.8f,%0.8f|" %
-                     (vert.co.x, vert.co.y, vert.co.z))  # type: ignore
-            # normal
-            vw.write("%0.8f,%0.8f,%0.8f|" %
-                     (vert.normal.x, vert.normal.y, vert.normal.z))  # type: ignore
-            # uv
-            vw.write("%0.8f,%0.8f|" %
-                     (uv[i].uv.x, uv[i].uv.y))  # type: ignore
-            # uv 2
-            vw.write("%0.8f,%0.8f|" %
-                     (0, 0))
-            # tint
-            vw.write("%d,%d,%d,%d\n" %
-                     (120, 120, 120, 255))
 
-    with open("%s/triangle.txt" % mesh_path, "w") as tw:
-        tw.write("index|flag|material_name\n")
-        for poly in mesh.polygons:
-            flag = 0
+    bm = bmesh.new()
+    mesh = obj.to_mesh()
+    bm.from_mesh(mesh, face_normals=True, vertex_normals=True)
+    if is_triangulate:
+        bmesh.ops.triangulate(bm, faces=bm.faces)  # type: ignore
+    bm.faces.ensure_lookup_table()
+    bm.normal_update()
 
-            if len(mesh.face_maps) > 0 and len(mesh.face_maps[0].data) >= poly.index:
-                name = obj.face_maps[mesh.face_maps[0].data[poly.index].value].name
-                flag = name[5:]
-            tw.write("%d,%d,%d|%s|%s\n" % (
-                poly.vertices[0], poly.vertices[1], poly.vertices[2], flag, mesh.materials[poly.material_index].name))
+    material_export(quail_path, mesh_path, mesh.materials)
+
+    vw = open("%s/vertex.txt" % mesh_path, "w")
+    vw.write("position|normal|uv|uv2|tint\n")
+
+    tw = open("%s/triangle.txt" % mesh_path, "w")
+    tw.write("index|flag|material_name\n")
+
+    mesh.uv_layers.active = mesh.uv_layers[0]
+    mesh.uv_layers.active_index = 0
+    mesh.uv_layers[0].active_render = True
+    uv = mesh.uv_layers[0].data
+    flag_layer = bm.faces.layers.int.get("flag")  # type: ignore
+    if flag_layer is None:
+        flag_layer = bm.faces.layers.int.new("flag")  # type: ignore
+
+    verts = {}
+    print("found %d faces" % len(bm.faces))
+    for face in bm.faces:  # type: ignore
+        if len(face.verts) != 3:
+            print("skipping face with %d verts (want 3)" % len(face.verts))
+            continue
+        index_str = ""
+        # face = bm.faces[face.index]
+        for loop in face.loops:
+            vert = loop.vert
+            index_str += "%d," % vert.index
+            line = ""
+            line += "%0.8f,%0.8f,%0.8f|" % (vert.co.x, vert.co.y, vert.co.z)
+            line += "%0.8f,%0.8f,%0.8f|" % (
+                vert.normal.x, vert.normal.y, vert.normal.z)
+            line += "%0.8f,%0.8f|" % (uv[loop.index].uv.x, uv[loop.index].uv.y)
+            line += "%0.8f,%0.8f|" % (0, 0)
+            line += "%d,%d,%d,%d\n" % (120, 120, 120, 255)
+            verts[vert.index] = line
+        index_str = index_str[:-1]
+        tw.write("%s|" % index_str)
+        tw.write("%s|%s\n" %
+                 (face[flag_layer], mesh.materials[face.material_index].name))
+
+    for vert in verts:
+        vw.write(verts[vert])
+
+    vw.close()
+    tw.close()
+    bm.free()

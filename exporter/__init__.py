@@ -28,6 +28,12 @@ class ExportQuail(Operator, ExportHelper):
     # ExportHelper mixin class uses this
     filename_ext = ".eqg"
 
+    is_triangulate: BoolProperty(
+        name="Triangulate",
+        description="Triangulate Meshes",
+        default=False,
+    )  # type: ignore
+
     filter_glob: StringProperty(
         default="*.eqg|*.s3d",
         options={'HIDDEN'},
@@ -36,7 +42,7 @@ class ExportQuail(Operator, ExportHelper):
 
     def execute(self, context):
         return export_data(context,
-                           self.filepath)  # type: ignore
+                           self.filepath, self.is_triangulate)  # type: ignore
 
 
 def menu_func_export(self, context):
@@ -44,7 +50,7 @@ def menu_func_export(self, context):
                          text="EverQuest Archive (.eqg/.s3d)")
 
 
-def export_data(context, filepath: str):
+def export_data(context, filepath: str, is_triangulate: bool):
     start_time = time.time()
 
     # get base of filepath
@@ -55,7 +61,7 @@ def export_data(context, filepath: str):
     pfs_tmp = tempfile.gettempdir() + "/quail/"+base_name + ".quail"
 
     print("Prepping temp data at %s...\n" % pfs_tmp)
-    quail_export.quail_export(pfs_tmp)
+    quail_export.quail_export(pfs_tmp, is_triangulate)
 
     result = quail.run("convert", pfs_tmp, filepath)
     if result != "":

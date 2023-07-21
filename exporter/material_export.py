@@ -32,16 +32,25 @@ def material_export(quail_path: str, mesh_path: str, materials: bpy.types.IDMate
             if base_color.is_linked:
                 for node_link in base_color.links:  # type: ignore
                     node = node_link.from_node
-                    if node.type != "TEX_IMAGE":
-                        continue
-                    is_texture_diffuse_written = True
+                    image_name = ""
                     label = "e_TextureDiffuse0"
                     if node.label.startswith("e_"):
                         label = node.label
+                    if node.type == "TEX_IMAGE":
+                        image_name = node.image.name
+                        if node.image.name.find(".") == -1:
+                            image_name += ".png"
+                        node.image.save_render(  # type: ignore
+                            filepath="%s/%s" % (material_path, image_name))  # type: ignore
+                    else:
+                        if image_name == "":
+                            image_name = mat.name
+                        # save_render of node
+
+                    is_texture_diffuse_written = True
                     mw.write("%s|%s|%d\n" % (
-                        label, node.image.name, 2))  # type: ignore
-                    node.image.save_render(  # type: ignore
-                        filepath="%s/%s" % (material_path, node.image.name))  # type: ignore
+                        label, image_name, 2))  # type: ignore
+
                     break
             else:
                 image = bpy.data.images.new("%s.png" % mat.name, 1, 1)
