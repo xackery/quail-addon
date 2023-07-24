@@ -20,10 +20,6 @@ def on_shader_change(self, context: bpy.types.Context):
     material["fx"] = self.shaders
 
 
-def faceChange(self, context: bpy.types.Context):
-    print("text changed to " + self.flags)
-
-
 class MaterialEditQuail(bpy.types.Panel):
     bl_idname = "QUAIL_PT_panel"
     bl_label = "EverQuest"

@@ -1,6 +1,7 @@
 import bpy
 import os
 from mathutils import Vector, Quaternion
+import bmesh
 
 
 def mesh_import(quail_path, mesh_path, is_visible) -> bool:
@@ -112,11 +113,27 @@ def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, root_obj) -> bpy.ty
         face_map = faces[new_map]
         face_map.append(i)
 
-    for key in faces:
-        if key not in mesh_obj.face_maps:
-            face_map = mesh_obj.face_maps.new(name=key)
-        face_map = mesh_obj.face_maps[key]
-        face_map.add(faces[key])
+    for face in faces:
+        if face not in mesh_obj.face_maps:
+            face_map = mesh_obj.face_maps.new(name=face)
+        face_map = mesh_obj.face_maps[face]
+        face_map.add(faces[face])
+        # add custom data to face
+
+    # assign custom data
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+
+    flag_layer = bm.faces.layers.int.get("flag")  # type: ignore
+    if flag_layer is None:
+        flag_layer = bm.faces.layers.int.new("flag")  # type: ignore
+
+    for face in bm.faces:
+        face[flag_layer] = mesh_flags[face.index]
+        print(face.index, face[flag_layer])
+
+    bm.to_mesh(mesh)
+    bm.free()
 
     # parent mesh to root object (rig)
     if root_obj != None:

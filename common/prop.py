@@ -1,7 +1,7 @@
 import bpy
 from bpy.props import StringProperty, EnumProperty, PointerProperty, BoolProperty
 from ..material_panel import on_shader_change
-from ..view_panel import on_collide_change
+from ..view_panel import on_flag_change
 
 
 def register():
@@ -18,14 +18,98 @@ def unregister():
 class QuailProps(bpy.types.PropertyGroup):
     flag_no_collide: BoolProperty(
         name="No Collision",
-        description="Does this face cause collisions?",
-        update=on_collide_change
+        description="Does this face cause collisions? (1, 2)",
+        update=on_flag_change
     )  # type: ignore
 
     flag_is_invisible: BoolProperty(
         name="Invisible",
-        description="Is this face invisible?",
-        update=on_collide_change
+        description="Is this face invisible? (2, 4)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_three: BoolProperty(
+        name="3",
+        description="Placeholder for (3, 8)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_four: BoolProperty(
+        name="4",
+        description="Placeholder for (4, 16)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_five: BoolProperty(
+        name="5",
+        description="Placeholder for (5, 32)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_six: BoolProperty(
+        name="6",
+        description="Placeholder for (6, 64)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_seven: BoolProperty(
+        name="7",
+        description="Placeholder for (7, 128)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_eight: BoolProperty(
+        name="8",
+        description="Placeholder for (8, 256)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_nine: BoolProperty(
+        name="9",
+        description="Placeholder for (9, 512)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_ten: BoolProperty(
+        name="10",
+        description="Placeholder for (10, 1024)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_eleven: BoolProperty(
+        name="11",
+        description="Placeholder for (11, 2048)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_twelve: BoolProperty(
+        name="12",
+        description="Placeholder for (12, 4096)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_thirteen: BoolProperty(
+        name="13",
+        description="Placeholder for (13, 8192)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_fourteen: BoolProperty(
+        name="14",
+        description="Placeholder for (14, 16384)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_fifteen: BoolProperty(
+        name="15",
+        description="Placeholder for (15, 32768)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_sixteen: BoolProperty(
+        name="16",
+        description="Placeholder for (16, 65536)",
+        update=on_flag_change
     )  # type: ignore
 
     object_types: bpy.props.EnumProperty(
