@@ -82,7 +82,7 @@ def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, root_obj) -> bpy.ty
         i = 0
         for vertex in vertices:
             uvlayer.data[triangle.loop_indices[i]].uv = (mesh_uvs[vertex]
-                                                         [0], mesh_uvs[vertex][1])
+                                                         [0], mesh_uvs[vertex][1]-1)
             i += 1
 
     # populate mesh polygons
