@@ -32,6 +32,15 @@ def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
     tw = open("%s/triangle.txt" % mesh_path, "w")
     tw.write("index|flag|material_name\n")
 
+    ext = ""
+    if len(obj.users_collection) > 0 and obj.users_collection[0].name != "Scene Collection" and obj.users_collection[0].get('ext') != None:
+        ext = obj.users_collection[0].get('ext')
+    elif obj.get('ext') != None:
+        ext = obj.get('ext')
+    if ext == "":
+        ext = "mod"
+    tw.write("ext|%s|-1\n" % ext)
+
     bm = bmesh.new()
     mesh = obj.data
     bm.from_mesh(mesh, vertex_normals=True, face_normals=True)  # type: ignore

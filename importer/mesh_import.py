@@ -4,7 +4,7 @@ from mathutils import Vector, Quaternion
 import bmesh
 
 
-def mesh_import(quail_path, mesh_path, is_visible) -> bool:
+def mesh_import(quail_path: str, mesh_path: str, is_visible: bool) -> bool:
     mesh_name = os.path.basename(mesh_path)
     if mesh_name[0] == "_":
         mesh_name = mesh_name[1:]
@@ -51,7 +51,8 @@ def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, root_obj) -> bpy.ty
     mesh_normals = []
     mesh_flags = []
     mesh_added_materials = {}
-    triangles = triangle_load("%s/triangle.txt" % mesh_path)
+
+    triangles = triangle_load(mesh, "%s/triangle.txt" % mesh_path)
     for triangle in triangles:
         mesh_normals.append(
             (triangle["index.x"], triangle["index.y"], triangle["index.z"]))
@@ -141,9 +142,11 @@ def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, root_obj) -> bpy.ty
         # safe to assume root object is a rig
         mesh_obj.modifiers.new(name="Armature", type="ARMATURE")
         mesh_obj.modifiers["Armature"].object = root_obj  # type: ignore
+        mesh_obj['ext'] = mesh['ext']
     else:
         mesh.name = mesh_name
         root_obj = mesh_obj
+        root_obj['ext'] = mesh['ext']
 
     return root_obj
 
@@ -317,6 +320,7 @@ def particle_point_parse(quail_path, mesh_path, mesh_name, root_obj):
         arm.select_set(True)
         bpy.context.view_layer.objects.active = arm
         bpy.ops.object.mode_set(mode='EDIT')
+        # TODO: fix
         arm.data.edit_bones.active = arm.data.edit_bones[pt["bone"]]
 
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -379,7 +383,7 @@ def vertex_load(path: str) -> list:
     return verts
 
 
-def triangle_load(path: str) -> list:
+def triangle_load(root_obj, path: str) -> list:
     triangles = []
     with open(path) as f:
         lines = f.readlines()
@@ -387,6 +391,11 @@ def triangle_load(path: str) -> list:
         lines.pop(0)
         for line in lines:
             records = line.split("|")
+            if records[0] == "ext":
+                print("ext loaded as %s" % records[1].rstrip())
+                print("setting %s as ext" % root_obj.name)
+                root_obj["ext"] = records[1].rstrip()
+                continue
             index = records[0].split(",")
 
             triangles.append({
