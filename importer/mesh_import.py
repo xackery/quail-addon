@@ -130,7 +130,6 @@ def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, root_obj) -> bpy.ty
 
     for face in bm.faces:
         face[flag_layer] = mesh_flags[face.index]
-        print(face.index, face[flag_layer])
 
     bm.to_mesh(mesh)
     bm.free()
@@ -303,7 +302,6 @@ def particle_point_parse(quail_path, mesh_path, mesh_name, root_obj):
     # bpy.context.evaluated_depsgraph_get().update()
 
     name, points = particle_point_load(cur_path)
-    print("name: %s" % name)
     for pt in points:
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.select_all(action='DESELECT')
@@ -327,7 +325,6 @@ def particle_point_parse(quail_path, mesh_path, mesh_name, root_obj):
         arm.select_set(True)
         bpy.context.view_layer.objects.active = arm
         bpy.ops.object.parent_set(type='BONE', keep_transform=False)
-        print("setting parent")
         # point.parent = root_obj
         # point.parent_type = "BONE"
         # print(root_obj.pose.bones.keys())
@@ -342,7 +339,6 @@ def particle_point_parse(quail_path, mesh_path, mesh_name, root_obj):
 
 def string_to_vector(line: str) -> Vector:
     lines = line.split(",")
-    print(lines)
     return Vector((float(lines[0]), float(lines[1]), float(lines[2])))
 
 

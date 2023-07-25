@@ -1,7 +1,9 @@
 import bpy
 from bpy.props import StringProperty, EnumProperty, PointerProperty, BoolProperty
 from ..material_panel import on_shader_change
-from ..view_panel import on_flag_change
+from ..view_panel import on_flag_change, on_ext_change
+
+bpy.types.Scene.is_flags_open = bpy.props.BoolProperty(default=True)
 
 
 def register():
@@ -16,6 +18,7 @@ def unregister():
 
 
 class QuailProps(bpy.types.PropertyGroup):
+
     flag_no_collide: BoolProperty(
         name="No Collision",
         description="Does this face cause collisions? (1, 2)",
@@ -173,13 +176,14 @@ class QuailProps(bpy.types.PropertyGroup):
     )  # type: ignore
 
     object_types: bpy.props.EnumProperty(
-        name="Type",
+        name="Ext",
         description="Sets the object type for current material",
+        update=on_ext_change,
         items=(
-            ("0", "MOD", "Sets the object type to MOD"),
-            ("1", "MDS", "Sets the object type to MDS"),
-            ("2", "TER", "Sets the object type to TER"),
-        )  # type: ignore
+            ("mod", "mod", "Sets the object type to MOD"),
+            ("mds", "mds", "Sets the object type to MDS"),
+            ("ter", "ter", "Sets the object type to TER"),
+        ),  # type: ignore
     )
 
     shaders: bpy.props.EnumProperty(
