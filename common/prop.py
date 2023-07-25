@@ -7,7 +7,7 @@ from ..view_panel import on_flag_change
 def register():
     bpy.utils.register_class(QuailProps)
     bpy.types.Scene.quail_props = bpy.props.PointerProperty(  # type: ignore
-        type=QuailProps)
+        type=QuailProps, update=on_flag_change)
 
 
 def unregister():
@@ -109,6 +109,66 @@ class QuailProps(bpy.types.PropertyGroup):
     is_sixteen: BoolProperty(
         name="16",
         description="Placeholder for (16, 65536)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_seventeen: BoolProperty(
+        name="17",
+        description="Placeholder for (17, 131072)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_eighteen: BoolProperty(
+        name="18",
+        description="Placeholder for (18, 262144)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_nineteen: BoolProperty(
+        name="19",
+        description="Placeholder for (19, 524288)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_twenty: BoolProperty(
+        name="20",
+        description="Placeholder for (20, 1048576)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_twentyone: BoolProperty(
+        name="21",
+        description="Placeholder for (21, 2097152)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_twentytwo: BoolProperty(
+        name="22",
+        description="Placeholder for (22, 4194304)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_twentythree: BoolProperty(
+        name="23",
+        description="Placeholder for (23, 8388608)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_twentyfour: BoolProperty(
+        name="24",
+        description="Placeholder for (24, 16777216)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_twentyfive: BoolProperty(
+        name="25",
+        description="Placeholder for (25, 33554432)",
+        update=on_flag_change
+    )  # type: ignore
+
+    is_twentysix: BoolProperty(
+        name="26",
+        description="Placeholder for (26, 67108864)",
         update=on_flag_change
     )  # type: ignore
 
