@@ -1,3 +1,5 @@
+# pyright: basic, reportGeneralTypeIssues=false, reportOptionalSubscript=false
+
 import bpy
 import os
 
@@ -95,7 +97,7 @@ def material_property_add(root_path: str, mesh_name: str, material_name: str, pr
         node_position = (-350, 0)
     elif property_name == "e_fShininess0":
         node = material.node_tree.nodes["Principled BSDF"]
-        node.inputs[7].default_value = float(property_value)  # type: ignore
+        node.inputs[7].default_value = float(property_value)
 
     if bsdf_index == -1:
         return
@@ -116,7 +118,7 @@ def material_property_add(root_path: str, mesh_name: str, material_name: str, pr
 
     print(">> Texture "+os.path.basename(texture_path))
     image = bpy.data.images.load(texture_path)
-    texture_node.image = image  # type: ignore
+    texture_node.image = image
 
     material.node_tree.links.new(
         texture_node.outputs[0], material.node_tree.nodes["Principled BSDF"].inputs[bsdf_index])

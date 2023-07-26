@@ -1,5 +1,6 @@
+# pyright: basic, reportGeneralTypeIssues=false, reportOptionalSubscript=false
+
 import bpy
-import bmesh
 from bpy.props import StringProperty, EnumProperty, PointerProperty, BoolProperty
 
 
@@ -13,7 +14,7 @@ def unregister():
 
 def on_shader_change(self, context: bpy.types.Context):
     # get current material
-    material = context.object.active_material  # type: ignore
+    material = context.object.active_material
     if material is None:
         return
     # set the fx custom property to the selected shader

@@ -1,3 +1,5 @@
+# pyright: basic, reportGeneralTypeIssues=false, reportOptionalSubscript=false
+
 import bpy
 import os
 
@@ -15,7 +17,7 @@ def mesh_export(quail_path, is_triangulate: bool):
     last_object = ""
     for obj in bpy.data.objects:
         mesh_name = ""
-        # type: ignore
+
         if len(obj.users_collection) > 0 and obj.users_collection[0].name != "Scene Collection":
             mesh_name = obj.users_collection[0].name
         else:
@@ -48,6 +50,7 @@ def mesh_particle_export(quail_path: str, mesh_path: str, mesh_name: str, obj: b
         return
     print(">> Particle", obj.name)
     global particle_writer
+    global render_writer
     if particle_writer == None:
         particle_writer = open("%s/particle_point.txt" % mesh_path, "w")
     particle_writer.write("name|bone|translation|rotation|scale\n")
@@ -84,10 +87,10 @@ def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
 
     bm = bmesh.new()
     mesh = obj.data
-    bm.from_mesh(mesh, vertex_normals=True, face_normals=True)  # type: ignore
-    flag_layer = bm.faces.layers.int.get("flag")  # type: ignore
+    bm.from_mesh(mesh, vertex_normals=True, face_normals=True)
+    flag_layer = bm.faces.layers.int.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")  # type: ignore
+        flag_layer = bm.faces.layers.int.new("flag")
 
     uv_layer = bm.loops.layers.uv.active
     col_lay = bm.loops.layers.color.active
@@ -181,10 +184,10 @@ def mesh_object_export6(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
 
     bm = bmesh.new()
     mesh = obj.data
-    bm.from_mesh(mesh, vertex_normals=True, face_normals=True)  # type: ignore
-    flag_layer = bm.faces.layers.int.get("flag")  # type: ignore
+    bm.from_mesh(mesh, vertex_normals=True, face_normals=True)
+    flag_layer = bm.faces.layers.int.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")  # type: ignore
+        flag_layer = bm.faces.layers.int.new("flag")
 
     vert_total = 0
     vert_count = 0
@@ -268,10 +271,10 @@ def mesh_object_export5(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
 
     bm = bmesh.new()
     mesh = obj.data
-    bm.from_mesh(mesh, vertex_normals=True, face_normals=True)  # type: ignore
-    flag_layer = bm.faces.layers.int.get("flag")  # type: ignore
+    bm.from_mesh(mesh, vertex_normals=True, face_normals=True)
+    flag_layer = bm.faces.layers.int.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")  # type: ignore
+        flag_layer = bm.faces.layers.int.new("flag")
 
     vert_count = 0
     normal_count = 0
@@ -329,9 +332,9 @@ def mesh_object_export4(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
 
     bm = bmesh.new()
     mesh = obj.data
-    bm.from_mesh(mesh, vertex_normals=True, face_normals=True)  # type: ignore
+    bm.from_mesh(mesh, vertex_normals=True, face_normals=True)
     if is_triangulate:
-        bmesh.ops.triangulate(bm, faces=bm.faces)  # type: ignore
+        bmesh.ops.triangulate(bm, faces=bm.faces)
     bm.normal_update()
 
     material_export(quail_path, mesh_path, mesh.materials)
@@ -342,9 +345,9 @@ def mesh_object_export4(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
     tw = open("%s/triangle.txt" % mesh_path, "w")
     tw.write("index|flag|material_name\n")
 
-    flag_layer = bm.faces.layers.int.get("flag")  # type: ignore
+    flag_layer = bm.faces.layers.int.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")  # type: ignore
+        flag_layer = bm.faces.layers.int.new("flag")
 
     bm.faces.ensure_lookup_table()
     bm.verts.ensure_lookup_table()
@@ -355,7 +358,7 @@ def mesh_object_export4(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
     uv_layer = bm.loops.layers.uv.active
 
     vert_indexes = {}
-    for face in bm.faces:  # type: ignore
+    for face in bm.faces:
         if len(face.verts) != 3:
             print("skipping face with %d verts (want 3)" % len(face.verts))
             continue
@@ -374,7 +377,7 @@ def mesh_object_export4(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
 
         # face.uv_textures.active = face.uv_layers[0]
 
-    for vert in bm.verts:  # type: ignore
+    for vert in bm.verts:
         if vert.index not in vert_indexes:
             continue
         vert_str = "%0.8f,%0.8f,%0.8f|" % (
@@ -406,9 +409,9 @@ def mesh_object_export3(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
     # mesh.calc_normals_split()
     # mesh.flip_normals()
     # mesh.calc_normals_split()
-    bm.from_mesh(mesh, vertex_normals=True, face_normals=True)  # type: ignore
+    bm.from_mesh(mesh, vertex_normals=True, face_normals=True)
     if is_triangulate:
-        bmesh.ops.triangulate(bm, faces=bm.faces)  # type: ignore
+        bmesh.ops.triangulate(bm, faces=bm.faces)
     bm.normal_update()
 
     material_export(quail_path, mesh_path, mesh.materials)
@@ -419,9 +422,9 @@ def mesh_object_export3(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
     tw = open("%s/triangle.txt" % mesh_path, "w")
     tw.write("index|flag|material_name\n")
 
-    flag_layer = bm.faces.layers.int.get("flag")  # type: ignore
+    flag_layer = bm.faces.layers.int.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")  # type: ignore
+        flag_layer = bm.faces.layers.int.new("flag")
 
     bm.faces.ensure_lookup_table()
     bm.verts.ensure_lookup_table()
@@ -432,7 +435,7 @@ def mesh_object_export3(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
     uv_layer = bm.loops.layers.uv.active
 
     vert_indexes = {}
-    for face in bm.faces:  # type: ignore
+    for face in bm.faces:
         if len(face.verts) != 3:
             print("skipping face with %d verts (want 3)" % len(face.verts))
             continue
@@ -451,7 +454,7 @@ def mesh_object_export3(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
 
         # face.uv_textures.active = face.uv_layers[0]
 
-    for vert in bm.verts:  # type: ignore
+    for vert in bm.verts:
         if vert.index not in vert_indexes:
             continue
         vert_str = "%0.8f,%0.8f,%0.8f|" % (
@@ -464,7 +467,7 @@ def mesh_object_export3(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
               (vert, uv_from_vert_first(uv_layer, vert), uv_from_vert_average(uv_layer, vert)))
 
         vert_str += "%0.8f,%0.8f|" % (
-            uv.x, uv.y)
+            uv[:])
         vert_str += "%0.8f,%0.8f|" % (0, 0)
         vert_str += "%d,%d,%d,%d\n" % (128, 128, 128, 255)
         vw.write(vert_str)
@@ -590,7 +593,7 @@ def mesh_object_export(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy
     # mesh.calc_normals_split()
     bm.from_mesh(mesh)  # , face_normals=True, vertex_normals=True)
     if is_triangulate:
-        bmesh.ops.triangulate(bm, faces=bm.faces)  # type: ignore
+        bmesh.ops.triangulate(bm, faces=bm.faces)
     bm.normal_update()
 
     material_export(quail_path, mesh_path, mesh.materials)
@@ -602,9 +605,9 @@ def mesh_object_export(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy
     tw.write("index|flag|material_name\n")
 
     uv_layer = bm.loops.layers.uv.verify()
-    flag_layer = bm.faces.layers.int.get("flag")  # type: ignore
+    flag_layer = bm.faces.layers.int.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")  # type: ignore
+        flag_layer = bm.faces.layers.int.new("flag")
 
     verts = {}
     bm.verts.index_update()
@@ -616,7 +619,7 @@ def mesh_object_export(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy
 
     # bm.faces.sort(key=lambda f: f.index)
 
-    for face in bm.faces:  # type: ignore
+    for face in bm.faces:
         if len(face.verts) != 3:
             print("skipping face with %d verts (want 3)" % len(face.verts))
             continue

@@ -1,3 +1,5 @@
+# pyright: basic, reportGeneralTypeIssues=false, reportOptionalSubscript=false
+
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, BoolProperty
 from bpy.types import Operator
@@ -33,23 +35,23 @@ class ImportQuail(Operator, ImportHelper):
         default="*.eqg;*.s3d",
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
-    )  # type: ignore
+    )
 
     is_scene_cleared: BoolProperty(
         name="Clear Scene Before Import",
         description="Clears the scene before importing, removing all objects, materials, collections etc",
         default=True,
-    )  # type: ignore
+    )
 
     is_scene_modified: BoolProperty(
         name="Modify Scene for Import",
         description="Sets view clip to 5000 (for large zones), other misc tweaks",
         default=True,
-    )  # type: ignore
+    )
 
     def execute(self, context):
         return import_data(context,
-                           self.filepath,  # type: ignore
+                           self.filepath,
                            self.is_scene_cleared,
                            self.is_scene_modified)
 
@@ -60,7 +62,7 @@ def menu_func_import(self, context):
 
 
 def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modified: bool = True):
-    with ProgressReport(context.window_manager) as progress:  # type: ignore
+    with ProgressReport(context.window_manager) as progress:
         progress.enter_substeps(2, "Generating quail...")
         # check if file exists
         if not os.path.exists(filepath):

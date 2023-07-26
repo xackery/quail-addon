@@ -1,10 +1,12 @@
+# pyright: basic, reportGeneralTypeIssues=false, reportOptionalSubscript=false
+
 import bpy
 import bmesh
 
 
 def on_selection_changed(scene):
-    bpy.types.QUAIL_PT_view.context_label = ""  # type: ignore
-    bpy.types.QUAIL_PT_view.view_mode = "none"  # type: ignore
+    bpy.types.QUAIL_PT_view.context_label = ""
+    bpy.types.QUAIL_PT_view.view_mode = "none"
     on_mesh_select(scene)
     on_particle_select(scene)
     on_face_select(scene)
@@ -19,7 +21,7 @@ def on_mesh_select(scene):
         return
     on_model_select(scene)
 
-    view = bpy.types.QUAIL_PT_view  # type: ignore
+    view = bpy.types.QUAIL_PT_view
     view.flag_label = "Flags: 0"
     view.display_label = ""
     sel_count = len(bpy.context.selected_objects)
@@ -30,14 +32,14 @@ def on_mesh_select(scene):
             view.display_label = "Select an object to edit details"
         return
 
-    bpy.types.QUAIL_PT_view.view_mode = "object"  # type: ignore
+    bpy.types.QUAIL_PT_view.view_mode = "object"
 
     if obj.type == "EMPTY":
         if obj.empty_display_type == "PLAIN_AXES":
-            ext = obj.get('ext')  # type: ignore
+            ext = obj.get('ext')
             if ext is None:
                 ext = "pts"
-            bpy.types.QUAIL_PT_view.view_mode = "particle"  # type: ignore
+            bpy.types.QUAIL_PT_view.view_mode = "particle"
             return
 
     if obj.type != "MESH":
@@ -59,14 +61,14 @@ def on_particle_select(scene):
     if obj.empty_display_type != "PLAIN_AXES":
         return
 
-    bpy.types.QUAIL_PT_view.view_mode = "particle"  # type: ignore
-    view = bpy.types.QUAIL_PT_view  # type: ignore
+    bpy.types.QUAIL_PT_view.view_mode = "particle"
+    view = bpy.types.QUAIL_PT_view
 
-    if len(obj.users_collection) == 0:  # type: ignore
+    if len(obj.users_collection) == 0:
         view.display_label = "Particle must be part of collection"
         return
 
-    if obj.users_collection[0].name == "Scene Collection":  # type: ignore
+    if obj.users_collection[0].name == "Scene Collection":
         view.display_label = "Particle must be part of collection"
         return
 
@@ -86,32 +88,32 @@ def on_rig_select(scene):
         return
 
     on_model_select(scene)
-    view = bpy.types.QUAIL_PT_view  # type: ignore
-    view.view_mode = "rig"  # type: ignore
+    view = bpy.types.QUAIL_PT_view
+    view.view_mode = "rig"
 
 
 def on_model_select(scene):
     obj = bpy.context.object
     if obj == None:
         return
-    view = bpy.types.QUAIL_PT_view  # type: ignore
+    view = bpy.types.QUAIL_PT_view
     ext = ""
-    if len(obj.users_collection) == 0:  # type: ignore
+    if len(obj.users_collection) == 0:
         ext = obj.get('ext')
-        bpy.context.scene.quail_props.object_types = ext if ext != None else "mod"  # type: ignore
+        bpy.context.scene.quail_props.object_types = ext if ext != None else "mod"
         view.context_label = "Model: %s" % (obj.name)
         return
 
-    if obj.users_collection[0].name == "Scene Collection":  # type: ignore
+    if obj.users_collection[0].name == "Scene Collection":
         ext = obj.get('ext')
-        bpy.context.scene.quail_props.object_types = ext if ext != None else "mod"  # type: ignore
+        bpy.context.scene.quail_props.object_types = ext if ext != None else "mod"
         view.context_label = "Model: %s" % (obj.name)
         return
 
-    ext = obj.users_collection[0].get('ext')  # type: ignore
-    bpy.context.scene.quail_props.object_types = ext if ext != None else "mod"  # type: ignore
+    ext = obj.users_collection[0].get('ext')
+    bpy.context.scene.quail_props.object_types = ext if ext != None else "mod"
     view.context_label = "Model: %s" % (
-        obj.users_collection[0].name)  # type: ignore
+        obj.users_collection[0].name)
 
 
 def on_face_select(scene):
@@ -127,7 +129,7 @@ def on_face_select(scene):
     if context.mode != 'EDIT_MESH':
         return
 
-    view = bpy.types.QUAIL_PT_view  # type: ignore
+    view = bpy.types.QUAIL_PT_view
 
     if context.tool_settings.mesh_select_mode[2] != True:
         view.display_label = "Use face select to edit details"
@@ -138,18 +140,18 @@ def on_face_select(scene):
         if sel_count > 1:
             view.display_label = "Too many faces selected"
         else:
-            view.display_label = "Select a face to edit details"  # type: ignore
+            view.display_label = "Select a face to edit details"
         return
 
-    bpy.types.QUAIL_PT_view.view_mode = "mesh"  # type: ignore
+    bpy.types.QUAIL_PT_view.view_mode = "mesh"
 
-    bm = bmesh.from_edit_mesh(context.object.data)  # type: ignore
-    flag_layer = bm.faces.layers.int.get("flag")  # type: ignore
+    bm = bmesh.from_edit_mesh(context.object.data)
+    flag_layer = bm.faces.layers.int.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")  # type: ignore
+        flag_layer = bm.faces.layers.int.new("flag")
 
     polygon = None
-    for poly in bm.faces:  # type: ignore
+    for poly in bm.faces:
         if not poly.select:
             continue
         if polygon:
@@ -173,42 +175,42 @@ def on_face_select(scene):
         view.display_label = "Face (%s)" % (
             context.object.active_material.name)
     view.flag_label = "Flags: %d" % flags
-    props = bpy.data.scenes[0].quail_props  # type: ignore
-    props.flag_no_collide = flags & 1 == 1  # type: ignore
-    props.flag_is_invisible = flags & 2 == 2  # type: ignore
-    props.is_three = flags & 8 == 8  # type: ignore
-    props.is_four = flags & 16 == 16  # type: ignore
-    props.is_five = flags & 32 == 32  # type: ignore
-    props.is_six = flags & 64 == 64  # type: ignore
-    props.is_seven = flags & 128 == 128  # type: ignore
-    props.is_eight = flags & 256 == 256  # type: ignore
-    props.is_nine = flags & 512 == 512  # type: ignore
-    props.is_ten = flags & 1024 == 1024  # type: ignore
-    props.is_eleven = flags & 2048 == 2048  # type: ignore
-    props.is_twelve = flags & 4096 == 4096  # type: ignore
-    props.is_thirteen = flags & 8192 == 8192  # type: ignore
-    props.is_fourteen = flags & 16384 == 16384  # type: ignore
-    props.is_fifteen = flags & 32768 == 32768  # type: ignore
-    props.is_sixteen = flags & 65536 == 65536  # type: ignore
-    props.is_seventeen = flags & 131072 == 131072  # type: ignore
-    props.is_eighteen = flags & 262144 == 262144  # type: ignore
-    props.is_nineteen = flags & 524288 == 524288  # type: ignore
-    props.is_twenty = flags & 1048576 == 1048576  # type: ignore
-    props.is_twentyone = flags & 2097152 == 2097152  # type: ignore
-    props.is_twentytwo = flags & 4194304 == 4194304  # type: ignore
-    props.is_twentythree = flags & 8388608 == 8388608  # type: ignore
-    props.is_twentyfour = flags & 16777216 == 16777216  # type: ignore
-    props.is_twentyfive = flags & 33554432 == 33554432  # type: ignore
-    props.is_twentysix = flags & 67108864 == 67108864  # type: ignore
+    props = bpy.data.scenes[0].quail_props
+    props.flag_no_collide = flags & 1 == 1
+    props.flag_is_invisible = flags & 2 == 2
+    props.is_three = flags & 8 == 8
+    props.is_four = flags & 16 == 16
+    props.is_five = flags & 32 == 32
+    props.is_six = flags & 64 == 64
+    props.is_seven = flags & 128 == 128
+    props.is_eight = flags & 256 == 256
+    props.is_nine = flags & 512 == 512
+    props.is_ten = flags & 1024 == 1024
+    props.is_eleven = flags & 2048 == 2048
+    props.is_twelve = flags & 4096 == 4096
+    props.is_thirteen = flags & 8192 == 8192
+    props.is_fourteen = flags & 16384 == 16384
+    props.is_fifteen = flags & 32768 == 32768
+    props.is_sixteen = flags & 65536 == 65536
+    props.is_seventeen = flags & 131072 == 131072
+    props.is_eighteen = flags & 262144 == 262144
+    props.is_nineteen = flags & 524288 == 524288
+    props.is_twenty = flags & 1048576 == 1048576
+    props.is_twentyone = flags & 2097152 == 2097152
+    props.is_twentytwo = flags & 4194304 == 4194304
+    props.is_twentythree = flags & 8388608 == 8388608
+    props.is_twentyfour = flags & 16777216 == 16777216
+    props.is_twentyfive = flags & 33554432 == 33554432
+    props.is_twentysix = flags & 67108864 == 67108864
 
 
 def bone_list_update(self, context: bpy.types.Context):
     bones = [("ATTACH_TO_ORIGIN", "ATTACH_TO_ORIGIN",
               "Center on 0,0,0 of the model")]
-    view = bpy.types.QUAIL_PT_view  # type: ignore
+    view = bpy.types.QUAIL_PT_view
     if view.particle_rig_label == "":
         return bones
-    obj = context.scene.objects.get(view.particle_rig_label)  # type: ignore
+    obj = context.scene.objects.get(view.particle_rig_label)
     if obj == None:
         return bones
     if obj.type != "ARMATURE":
@@ -223,13 +225,13 @@ def bone_list_update(self, context: bpy.types.Context):
 def register():
     bpy.utils.register_class(ViewPanelQuail)
     bpy.app.handlers.depsgraph_update_post.append(
-        on_selection_changed)  # type: ignore
+        on_selection_changed)
 
 
 def unregister():
     bpy.utils.unregister_class(ViewPanelQuail)
     bpy.app.handlers.depsgraph_update_post.remove(
-        on_selection_changed)  # type: ignore
+        on_selection_changed)
 
 
 class ViewPanelQuail(bpy.types.Panel):
@@ -265,8 +267,8 @@ class ViewPanelQuail(bpy.types.Panel):
         layout = self.layout
         row = layout.row()
         row.label(text="%s.%s" % (self.context_label,
-                                  context.scene.quail_props.object_types))  # type: ignore
-        layout.prop(context.scene.quail_props, "object_types",  # type: ignore
+                                  context.scene.quail_props.object_types))
+        layout.prop(context.scene.quail_props, "object_types",
                     toggle=True)
         row = layout.row()
         row.label(text=self.display_label)
@@ -279,9 +281,9 @@ class ViewPanelQuail(bpy.types.Panel):
         layout = self.layout
         row = layout.row()
         row.label(text="%s.%s" % (self.context_label,
-                                  context.scene.quail_props.object_types))  # type: ignore
+                                  context.scene.quail_props.object_types))
         row = layout.row()
-        layout.prop(context.scene.quail_props, "object_types",  # type: ignore
+        layout.prop(context.scene.quail_props, "object_types",
                     toggle=True)
         row = layout.row()
         row.label(text=self.display_label)
@@ -296,8 +298,8 @@ class ViewPanelQuail(bpy.types.Panel):
         layout = self.layout
         row = layout.row()
         row.label(text="%s.%s" % (self.context_label,
-                                  context.scene.quail_props.object_types))  # type: ignore
-        layout.prop(context.scene.quail_props, "object_types",  # type: ignore
+                                  context.scene.quail_props.object_types))
+        layout.prop(context.scene.quail_props, "object_types",
                     toggle=True)
         if self.display_label != "":
             row = layout.row()
@@ -309,7 +311,7 @@ class ViewPanelQuail(bpy.types.Panel):
         row = layout.row()
         row.label(text="Rig: %s" % self.particle_rig_label)
         row = layout.row()
-        row.prop(context.scene.quail_props, "bones")  # type: ignore
+        row.prop(context.scene.quail_props, "bones")
 
         # row.template_list("MATERIAL_UL_matslots", "", ob, "material_slots", ob, "active_material_index", rows=rows)
 
@@ -327,8 +329,8 @@ class ViewPanelQuail(bpy.types.Panel):
         layout = self.layout
         row = layout.row()
         row.label(text="%s.%s" % (self.context_label,
-                                  context.scene.quail_props.object_types))  # type: ignore
-        layout.prop(context.scene.quail_props, "object_types",  # type: ignore
+                                  context.scene.quail_props.object_types))
+        layout.prop(context.scene.quail_props, "object_types",
                     toggle=True)
         row = layout.row()
         row.label(text=self.display_label)
@@ -350,59 +352,59 @@ class ViewPanelQuail(bpy.types.Panel):
         if sel_count != 1:
             return
 
-        props = bpy.data.scenes.get("Scene").quail_props  # type: ignore
-        col.prop(context.scene.quail_props, "flag_no_collide",  # type: ignore
+        props = bpy.data.scenes.get("Scene").quail_props
+        col.prop(context.scene.quail_props, "flag_no_collide",
                  toggle=True)
-        col.prop(context.scene.quail_props,  # type: ignore
+        col.prop(context.scene.quail_props,
                  "flag_is_invisible",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_three",  # type: ignore
+        col.prop(context.scene.quail_props, "is_three",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_four",  # type: ignore
+        col.prop(context.scene.quail_props, "is_four",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_five",  # type: ignore
+        col.prop(context.scene.quail_props, "is_five",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_six",  # type: ignore
+        col.prop(context.scene.quail_props, "is_six",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_seven",  # type: ignore
+        col.prop(context.scene.quail_props, "is_seven",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_eight",  # type: ignore
+        col.prop(context.scene.quail_props, "is_eight",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_nine",  # type: ignore
+        col.prop(context.scene.quail_props, "is_nine",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_ten",  # type: ignore
+        col.prop(context.scene.quail_props, "is_ten",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_eleven",  # type: ignore
+        col.prop(context.scene.quail_props, "is_eleven",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_twelve",  # type: ignore
+        col.prop(context.scene.quail_props, "is_twelve",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_thirteen",  # type: ignore
+        col.prop(context.scene.quail_props, "is_thirteen",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_fourteen",  # type: ignore
+        col.prop(context.scene.quail_props, "is_fourteen",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_fifteen",  # type: ignore
+        col.prop(context.scene.quail_props, "is_fifteen",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_sixteen",  # type: ignore
+        col.prop(context.scene.quail_props, "is_sixteen",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_seventeen",  # type: ignore
+        col.prop(context.scene.quail_props, "is_seventeen",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_eighteen",  # type: ignore
+        col.prop(context.scene.quail_props, "is_eighteen",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_nineteen",  # type: ignore
+        col.prop(context.scene.quail_props, "is_nineteen",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_twenty",  # type: ignore
+        col.prop(context.scene.quail_props, "is_twenty",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_twentyone",  # type: ignore
+        col.prop(context.scene.quail_props, "is_twentyone",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_twentytwo",  # type: ignore
+        col.prop(context.scene.quail_props, "is_twentytwo",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_twentythree",  # type: ignore
+        col.prop(context.scene.quail_props, "is_twentythree",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_twentyfour",  # type: ignore
+        col.prop(context.scene.quail_props, "is_twentyfour",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_twentyfive",  # type: ignore
+        col.prop(context.scene.quail_props, "is_twentyfive",
                  toggle=True)
-        col.prop(context.scene.quail_props, "is_twentysix",  # type: ignore
+        col.prop(context.scene.quail_props, "is_twentysix",
                  toggle=True)
 
 
@@ -419,7 +421,7 @@ def on_ext_change(self, context: bpy.types.Context):
 
 
 def on_flag_change(self, context: bpy.types.Context):
-    props = bpy.data.scenes[0].quail_props  # type: ignore
+    props = bpy.data.scenes[0].quail_props
     flags = 0
 
     if props.flag_no_collide:
@@ -493,13 +495,13 @@ def on_flag_change(self, context: bpy.types.Context):
     if sel_count != 1:
         return
 
-    bm = bmesh.from_edit_mesh(context.object.data)  # type: ignore
-    flag_layer = bm.faces.layers.int.get("flag")  # type: ignore
+    bm = bmesh.from_edit_mesh(context.object.data)
+    flag_layer = bm.faces.layers.int.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")  # type: ignore
+        flag_layer = bm.faces.layers.int.new("flag")
 
     polygon = None
-    for poly in bm.faces:  # type: ignore
+    for poly in bm.faces:
         if not poly.select:
             continue
         if polygon:
@@ -509,4 +511,4 @@ def on_flag_change(self, context: bpy.types.Context):
     if polygon == None:
         return
     polygon[flag_layer] = flags
-    bmesh.update_edit_mesh(context.object.data)  # type: ignore
+    bmesh.update_edit_mesh(context.object.data)

@@ -1,3 +1,5 @@
+# pyright: basic, reportGeneralTypeIssues=false, reportOptionalSubscript=false
+
 import bpy
 from bpy.props import StringProperty, EnumProperty, PointerProperty, BoolProperty
 from ..material_panel import on_shader_change
@@ -7,178 +9,178 @@ from ..view_panel import on_flag_change, on_ext_change, bone_list_update
 def register():
     bpy.utils.register_class(QuailProps)
     bpy.types.Scene.is_flags_open = bpy.props.BoolProperty(
-        default=True)  # type: ignore
-    bpy.types.Scene.quail_props = bpy.props.PointerProperty(  # type: ignore
+        default=True)
+    bpy.types.Scene.quail_props = bpy.props.PointerProperty(
         type=QuailProps, update=on_flag_change)
 
 
 def unregister():
     bpy.utils.unregister_class(QuailProps)
-    del bpy.types.Scene.quail_props  # type: ignore
-    del bpy.types.Scene.is_flags_open  # type: ignore
+    del bpy.types.Scene.quail_props
+    del bpy.types.Scene.is_flags_open
 
 
 class QuailProps(bpy.types.PropertyGroup):
 
     bones: bpy.props.EnumProperty(
         items=bone_list_update
-    )  # type: ignore
+    )
 
     flag_no_collide: BoolProperty(
         name="No Collision",
         description="Does this face cause collisions? (1, 2)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     flag_is_invisible: BoolProperty(
         name="Invisible",
         description="Is this face invisible? (2, 4)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_three: BoolProperty(
         name="3",
         description="Placeholder for (3, 8)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_four: BoolProperty(
         name="4",
         description="Placeholder for (4, 16)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_five: BoolProperty(
         name="5",
         description="Placeholder for (5, 32)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_six: BoolProperty(
         name="6",
         description="Placeholder for (6, 64)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_seven: BoolProperty(
         name="7",
         description="Placeholder for (7, 128)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_eight: BoolProperty(
         name="8",
         description="Placeholder for (8, 256)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_nine: BoolProperty(
         name="9",
         description="Placeholder for (9, 512)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_ten: BoolProperty(
         name="10",
         description="Placeholder for (10, 1024)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_eleven: BoolProperty(
         name="11",
         description="Placeholder for (11, 2048)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_twelve: BoolProperty(
         name="12",
         description="Placeholder for (12, 4096)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_thirteen: BoolProperty(
         name="13",
         description="Placeholder for (13, 8192)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_fourteen: BoolProperty(
         name="14",
         description="Placeholder for (14, 16384)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_fifteen: BoolProperty(
         name="15",
         description="Placeholder for (15, 32768)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_sixteen: BoolProperty(
         name="16",
         description="Placeholder for (16, 65536)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_seventeen: BoolProperty(
         name="17",
         description="Placeholder for (17, 131072)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_eighteen: BoolProperty(
         name="18",
         description="Placeholder for (18, 262144)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_nineteen: BoolProperty(
         name="19",
         description="Placeholder for (19, 524288)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_twenty: BoolProperty(
         name="20",
         description="Placeholder for (20, 1048576)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_twentyone: BoolProperty(
         name="21",
         description="Placeholder for (21, 2097152)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_twentytwo: BoolProperty(
         name="22",
         description="Placeholder for (22, 4194304)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_twentythree: BoolProperty(
         name="23",
         description="Placeholder for (23, 8388608)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_twentyfour: BoolProperty(
         name="24",
         description="Placeholder for (24, 16777216)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_twentyfive: BoolProperty(
         name="25",
         description="Placeholder for (25, 33554432)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     is_twentysix: BoolProperty(
         name="26",
         description="Placeholder for (26, 67108864)",
         update=on_flag_change
-    )  # type: ignore
+    )
 
     object_types: bpy.props.EnumProperty(
         name="Ext",
@@ -188,7 +190,7 @@ class QuailProps(bpy.types.PropertyGroup):
             ("mod", "mod", "Sets the object type to MOD"),
             ("mds", "mds", "Sets the object type to MDS"),
             ("ter", "ter", "Sets the object type to TER"),
-        ),  # type: ignore
+        ),
     )
 
     shaders: bpy.props.EnumProperty(
@@ -271,5 +273,5 @@ class QuailProps(bpy.types.PropertyGroup):
             ("OpaqueSModelCB1Max.fx", "OpaqueSModelCB1Max.fx", "Sets the shader"),
             ("OpaqueSModelCBGG1Max.fx", "OpaqueSModelCBGG1Max.fx", "Sets the shader"),
             ("OpaqueSModelCG1Max.fx", "OpaqueSModelCG1Max.fx", "Sets the shader")
-        ),  # type: ignore
-        update=on_shader_change)  # type: ignore
+        ),
+        update=on_shader_change)

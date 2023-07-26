@@ -1,3 +1,5 @@
+# pyright: basic, reportGeneralTypeIssues=false, reportOptionalSubscript=false
+
 import bpy
 import os
 from .mesh_import import mesh_import
@@ -8,7 +10,7 @@ from bpy_extras.wm_utils.progress_report import ProgressReport
 
 
 def quail_import(quail_path):
-    with ProgressReport(bpy.context.window_manager) as progress:  # type: ignore
+    with ProgressReport(bpy.context.window_manager) as progress:
         ext = os.path.splitext(quail_path)[1]
         if ext != ".quail":
             return

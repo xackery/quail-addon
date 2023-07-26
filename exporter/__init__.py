@@ -1,3 +1,5 @@
+# pyright: basic, reportGeneralTypeIssues=false, reportOptionalSubscript=false
+
 from bpy_extras.io_utils import ExportHelper
 from bpy.props import StringProperty, BoolProperty
 from bpy.types import Operator
@@ -32,17 +34,17 @@ class ExportQuail(Operator, ExportHelper):
         name="Triangulate",
         description="Triangulate Meshes",
         default=False,
-    )  # type: ignore
+    )
 
     filter_glob: StringProperty(
         default="*.eqg|*.s3d",
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
-    )  # type: ignore
+    )
 
     def execute(self, context):
         return export_data(context,
-                           self.filepath, self.is_triangulate)  # type: ignore
+                           self.filepath, self.is_triangulate)
 
 
 def menu_func_export(self, context):

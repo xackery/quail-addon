@@ -1,6 +1,9 @@
+# pyright: basic, reportGeneralTypeIssues=false, reportOptionalSubscript=false
+
 import bpy
 import os
 from mathutils import Vector, Quaternion
+from .ani_import import ani_import
 import bmesh
 
 
@@ -27,6 +30,8 @@ def mesh_import(quail_path: str, mesh_path: str, is_visible: bool) -> bool:
     else:
         root_obj = mesh_parse(quail_path, mesh_path,
                               mesh_name, is_visible, collection, None)
+
+    ani_import(quail_path, mesh_path, mesh_name)
     # count the number of objects inside the collection
     if len(collection.objects) == 1:
         # if only one object, remove the collection and link the object to the scene
@@ -135,9 +140,9 @@ def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, collection, root_ob
     bm = bmesh.new()
     bm.from_mesh(mesh)
 
-    flag_layer = bm.faces.layers.int.get("flag")  # type: ignore
+    flag_layer = bm.faces.layers.int.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")  # type: ignore
+        flag_layer = bm.faces.layers.int.new("flag")
 
     for face in bm.faces:
         face[flag_layer] = mesh_flags[face.index]
@@ -154,7 +159,7 @@ def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, collection, root_ob
     #     mesh_obj.parent = root_obj
     #     # safe to assume root object is a rig
     #     mesh_obj.modifiers.new(name="Armature", type="ARMATURE")
-    #     mesh_obj.modifiers["Armature"].object = root_obj  # type: ignore
+    #     mesh_obj.modifiers["Armature"].object = root_obj
     #     mesh_obj['ext'] = mesh['ext']
     # else:
     #     mesh.name = mesh_name
