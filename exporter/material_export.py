@@ -11,7 +11,7 @@ def material_export(quail_path: str, mesh_path: str, materials: bpy.types.IDMate
         if os.path.exists(material_path):
             continue
         os.makedirs(material_path)
-        print("> Material", mat.name)
+        print(">>> Material", mat.name)
         if bpy.data.materials.get(mat.name) is None:
             continue
         if mat.name == "":
@@ -70,7 +70,7 @@ def material_export(quail_path: str, mesh_path: str, materials: bpy.types.IDMate
                 if node.label == "e_TextureDiffuse0" and not is_texture_diffuse_written:
                     mw.write("%s|%s|%d\n" % (
                         node.label, node.image.name, 2))  # type: ignore
-                    print(">> Texture %s" %
+                    print(">>>> Texture %s" %
                           node.image.name)  # type: ignore
                     node.image.save_render(  # type: ignore
                         filepath="%s/%s" % (material_path, node.image.name))  # type: ignore
@@ -78,7 +78,7 @@ def material_export(quail_path: str, mesh_path: str, materials: bpy.types.IDMate
                 elif node.label == "e_TextureNormal0":
                     mw.write("%s|%s|%d\n" % (
                         node.label, node.image.name, 2))  # type: ignore
-                    print(">> Texture %s" %
+                    print(">>>> Texture %s" %
                           node.image.name)  # type: ignore
                     node.image.save_render(  # type: ignore
                         filepath="%s/%s" % (material_path, node.image.name))  # type: ignore

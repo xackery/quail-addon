@@ -6,21 +6,62 @@ from .material_export import material_export
 import bmesh
 
 
+particle_writer = None
+render_writer = None
+
+
 def mesh_export(quail_path, is_triangulate: bool):
 
-    # for collection in bpy.data.collections:
-    #    is_created = False
+    last_object = ""
     for obj in bpy.data.objects:
-        mesh_path = "%s/%s.mesh" % (quail_path, obj.name)
-        if obj.type != "MESH":
+        mesh_name = ""
+        # type: ignore
+        if len(obj.users_collection) > 0 and obj.users_collection[0].name != "Scene Collection":
+            mesh_name = obj.users_collection[0].name
+        else:
+            mesh_name = obj.name
+
+        if obj.type == "ARMATURE":
+            print("TODO: rig support")
             continue
-        os.makedirs(mesh_path)
+
+        if last_object != mesh_name:
+            print("> Model %s" % mesh_name)
+            last_object = mesh_name
+
+        mesh_path = "%s/%s.mesh" % (quail_path, mesh_name)
+        # check if path exists
+        if not os.path.exists(mesh_path):
+            os.makedirs(mesh_path)
+
+        mesh_particle_export(quail_path, mesh_path, mesh_name, obj)
         mesh_object_export7(quail_path, mesh_path,
                             obj.name, obj, is_triangulate)
+    if particle_writer != None:
+        particle_writer.close()
+
+
+def mesh_particle_export(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy.types.Object):
+    if obj.type != "EMPTY":
+        return
+    if obj.empty_display_type != "PLAIN_AXES":
+        return
+    print(">> Particle", obj.name)
+    global particle_writer
+    if particle_writer == None:
+        particle_writer = open("%s/particle_point.txt" % mesh_path, "w")
+    particle_writer.write("name|bone|translation|rotation|scale\n")
+    particle_writer.write("%s|%s|%0.8f,%0.8f,%0.8f|%0.8f,%0.8f,%0.8f,%0.8f|%0.8f,%0.8f,%0.8f\n" % (
+        obj.name, obj.name, obj.location.x, obj.location.y, obj.location.z, obj.rotation_quaternion.w, obj.rotation_quaternion.x, obj.rotation_quaternion.y, obj.rotation_quaternion.z, obj.scale.x, obj.scale.y, obj.scale.z))
+    if render_writer == None:
+        render_writer = open("%s/particle_render.txt" % quail_path, "w")
+    render_writer.write(
+        "id|id2|particlePoint|unknowna|duration|unknownb|unknownffffffff|unknownc\n")
 
 
 def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy.types.Object, is_triangulate: bool):
-    print("> Object", mesh_name)
+    if obj.type != "MESH":
+        return
     print(">> Mesh", mesh_name)
 
     mesh = obj.data
@@ -59,7 +100,6 @@ def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
         pf = []
 
         material_name = mesh.materials[face.material_index-1].name
-        print("material_name", material_name)
 
         faces.append((pf, face[flag_layer], material_name))
         for loop in face.loops:

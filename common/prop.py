@@ -1,13 +1,13 @@
 import bpy
 from bpy.props import StringProperty, EnumProperty, PointerProperty, BoolProperty
 from ..material_panel import on_shader_change
-from ..view_panel import on_flag_change, on_ext_change
-
-bpy.types.Scene.is_flags_open = bpy.props.BoolProperty(default=True)
+from ..view_panel import on_flag_change, on_ext_change, bone_list_update
 
 
 def register():
     bpy.utils.register_class(QuailProps)
+    bpy.types.Scene.is_flags_open = bpy.props.BoolProperty(
+        default=True)  # type: ignore
     bpy.types.Scene.quail_props = bpy.props.PointerProperty(  # type: ignore
         type=QuailProps, update=on_flag_change)
 
@@ -15,9 +15,14 @@ def register():
 def unregister():
     bpy.utils.unregister_class(QuailProps)
     del bpy.types.Scene.quail_props  # type: ignore
+    del bpy.types.Scene.is_flags_open  # type: ignore
 
 
 class QuailProps(bpy.types.PropertyGroup):
+
+    bones: bpy.props.EnumProperty(
+        items=bone_list_update
+    )  # type: ignore
 
     flag_no_collide: BoolProperty(
         name="No Collision",

@@ -6,6 +6,7 @@ def on_selection_changed(scene):
     bpy.types.QUAIL_PT_view.context_label = ""  # type: ignore
     bpy.types.QUAIL_PT_view.view_mode = "none"  # type: ignore
     on_mesh_select(scene)
+    on_particle_select(scene)
     on_face_select(scene)
     on_rig_select(scene)
 
@@ -42,6 +43,37 @@ def on_mesh_select(scene):
     if obj.type != "MESH":
         view.display_label = "Select a mesh object to edit details"
         return
+
+
+def on_particle_select(scene):
+    if bpy.context.mode != 'OBJECT':
+        return
+    obj = bpy.context.object
+    if obj == None:
+        return
+    on_model_select(scene)
+
+    if obj.type != "EMPTY":
+        return
+
+    if obj.empty_display_type != "PLAIN_AXES":
+        return
+
+    bpy.types.QUAIL_PT_view.view_mode = "particle"  # type: ignore
+    view = bpy.types.QUAIL_PT_view  # type: ignore
+
+    if len(obj.users_collection) == 0:  # type: ignore
+        view.display_label = "Particle must be part of collection"
+        return
+
+    if obj.users_collection[0].name == "Scene Collection":  # type: ignore
+        view.display_label = "Particle must be part of collection"
+        return
+
+    for obj in obj.users_collection[0].objects:
+        if obj.type != "ARMATURE":
+            continue
+        view.particle_rig_label = obj.name
 
 
 def on_rig_select(scene):
@@ -170,6 +202,24 @@ def on_face_select(scene):
     props.is_twentysix = flags & 67108864 == 67108864  # type: ignore
 
 
+def bone_list_update(self, context: bpy.types.Context):
+    bones = [("ATTACH_TO_ORIGIN", "ATTACH_TO_ORIGIN",
+              "Center on 0,0,0 of the model")]
+    view = bpy.types.QUAIL_PT_view  # type: ignore
+    if view.particle_rig_label == "":
+        return bones
+    obj = context.scene.objects.get(view.particle_rig_label)  # type: ignore
+    if obj == None:
+        return bones
+    if obj.type != "ARMATURE":
+        return bones
+
+    # iterate bones
+    for bone in obj.data.bones:
+        bones.append((bone.name, bone.name, "Attach to %s" % bone.name))
+    return bones
+
+
 def register():
     bpy.utils.register_class(ViewPanelQuail)
     bpy.app.handlers.depsgraph_update_post.append(
@@ -194,6 +244,7 @@ class ViewPanelQuail(bpy.types.Panel):
     display_label: str = ""
     flag_label: str = ""
     view_mode: str = ""
+    particle_rig_label: str = ""
 
     def draw(self, context: bpy.types.Context):
         if self.object_draw(context):
@@ -248,8 +299,25 @@ class ViewPanelQuail(bpy.types.Panel):
                                   context.scene.quail_props.object_types))  # type: ignore
         layout.prop(context.scene.quail_props, "object_types",  # type: ignore
                     toggle=True)
+        if self.display_label != "":
+            row = layout.row()
+            row.label(text=self.display_label)
+
+        if self.particle_rig_label == "":
+            return True
+
         row = layout.row()
-        row.label(text=self.display_label)
+        row.label(text="Rig: %s" % self.particle_rig_label)
+        row = layout.row()
+        row.prop(context.scene.quail_props, "bones")  # type: ignore
+
+        # row.template_list("MATERIAL_UL_matslots", "", ob, "material_slots", ob, "active_material_index", rows=rows)
+
+        # col = row.column(align=True)
+        # col.operator("object.material_slot_add", icon='ADD', text="")
+        # col.operator("object.material_slot_remove", icon='REMOVE', text="")
+
+        # col.separator()
 
         return True
 

@@ -22,6 +22,8 @@ def mesh_import(quail_path: str, mesh_path: str, is_visible: bool) -> bool:
                               mesh_name, is_visible, collection, root_obj)
         particle_point_parse(quail_path,
                              mesh_path, mesh_name, collection, root_obj)
+        particle_render_parse(quail_path,
+                              mesh_path, mesh_name, collection, root_obj)
     else:
         root_obj = mesh_parse(quail_path, mesh_path,
                               mesh_name, is_visible, collection, None)
@@ -331,24 +333,59 @@ def particle_point_parse(quail_path, mesh_path, mesh_name, collection, root_obj)
         bpy.ops.object.mode_set(mode='EDIT')
         # TODO: fix
         bone_name = pt["bone"]
+        point["bone"] = bone_name
         if bone_name != "ATTACH_TO_ORIGIN":
-            arm.data.edit_bones.active = arm.data.edit_bones[pt["bone"]]
-            bpy.ops.object.mode_set(mode='OBJECT')
-            bpy.ops.object.select_all(action='DESELECT')
-            point.select_set(True)
-            arm.select_set(True)
-            bpy.context.view_layer.objects.active = arm
-            bpy.ops.object.parent_set(type='BONE', keep_transform=False)
-        # point.parent = root_obj
-        # point.parent_type = "BONE"
-        # print(root_obj.pose.bones.keys())
-        # rig.pose.bones[records[1]]
-        # bone = rig.pose.bones[]
-        # point.parent_bone = records[1]
+            bone = arm.data.edit_bones[bone_name]
+            point.location = bone.tail
+            # arm.data.edit_bones.active = arm.data.edit_bones[pt["bone"]]
+            # bpy.ops.object.mode_set(mode='OBJECT')
+            # bpy.ops.object.select_all(action='DESELECT')
+            # point.select_set(True)
+            # arm.select_set(True)
+            # bpy.context.view_layer.objects.active = arm
+            # bpy.ops.object.parent_set(type='BONE', keep_transform=False)
 
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.select_all(action='DESELECT')  # deselect all object
     bpy.context.view_layer.objects.active = None  # remove active object
+
+
+def particle_render_parse(quail_path, mesh_path, mesh_name, collection, root_obj):
+    cur_path = "%s/particle_render.txt" % mesh_path
+    if not os.path.exists(cur_path):
+        return
+
+    # root_bone = arm.bones.find("ROOT_BONE")
+    # bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+    # bpy.ops.object.mode_set(mode='POSE', toggle=False)
+    # bpy.context.evaluated_depsgraph_get().update()
+
+    renders = particle_render_load(cur_path)
+    for rend in renders:
+        obj = bpy.context.scene.objects.get(rend["particle_point"])
+        if obj is None:
+            print(">> ParticleRender %s not found" % rend["particle_point"])
+            continue
+
+        prop = obj.get("renders")
+        if prop is None:
+            prop = []
+
+        prop.append({
+            "id": rend["id"],
+            "id2": rend["id2"],
+            "duration": rend["duration"],
+            "unknowna1": rend["unknowna1"],
+            "unknowna2": rend["unknowna2"],
+            "unknowna3": rend["unknowna3"],
+            "unknowna4": rend["unknowna4"],
+            "unknowna5": rend["unknowna5"],
+            "duration": rend["duration"],
+            "unknownb": rend["unknownb"],
+            "unknownffffffff": rend["unknownffffffff"],
+            "unknownc": rend["unknownc"],
+        })
+        obj["renders"] = prop
 
 
 def string_to_vector(line: str) -> Vector:
@@ -445,21 +482,47 @@ def bone_load(path: str) -> list:
 
 def particle_point_load(path: str) -> tuple[str, list]:
     points = []
-    name = ""
-    with open(path) as f:
-        lines = f.readlines()
-        # skip first line
-        lines.pop(0)
-        for line in lines:
-            records = line.split("|")
-            if records[0] == "id":
-                name = records[1].rstrip()
-                continue
-            points.append({
-                "name": records[0],
-                "bone": records[1],
-                "translation": string_to_vector(records[2]),
-                "rotation": string_to_vector(records[3]),
-                "scale": string_to_vector(records[4]),
-            })
+    name = os.path.splitext(os.path.basename(path))[0]
+
+    r = open(path, "r")
+    lines = r.readlines()
+    # skip first line
+    lines.pop(0)
+    for line in lines:
+        records = line.split("|")
+        points.append({
+            "name": records[0],
+            "bone": records[1],
+            "translation": string_to_vector(records[2]),
+            "rotation": string_to_vector(records[3]),
+            "scale": string_to_vector(records[4]),
+        })
+    r.close()
     return name, points
+
+
+def particle_render_load(path: str) -> list:
+    renders = []
+    r = open(path, "r")
+    lines = r.readlines()
+    # skip first line
+    lines.pop(0)
+    for line in lines:
+        records = line.split("|")
+        # id|id2|particle_point|unknowna1|unknowna2|unknowna3|unknowna4|unknowna5|duration|unknownb|unknownffffffff|unknownc
+        renders.append({
+            "id": int(records[0]),
+            "id2": int(records[1]),
+            "particle_point": records[2],
+            "unknowna1": int(records[3]),
+            "unknowna2": int(records[4]),
+            "unknowna3": int(records[5]),
+            "unknowna4": int(records[6]),
+            "unknowna5": int(records[7]),
+            "duration": int(records[8]),
+            "unknownb": int(records[9]),
+            "unknownffffffff": int(records[10]),
+            "unknownc": int(records[11]),
+        })
+    r.close()
+    return renders
