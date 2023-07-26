@@ -13,9 +13,11 @@ def on_selection_changed(scene):
 def on_mesh_select(scene):
     if bpy.context.mode != 'OBJECT':
         return
+    obj = bpy.context.object
+    if obj == None:
+        return
     on_model_select(scene)
 
-    obj = bpy.context.object
     view = bpy.types.QUAIL_PT_view  # type: ignore
     view.flag_label = "Flags: 0"
     view.display_label = ""
@@ -46,6 +48,8 @@ def on_rig_select(scene):
     if bpy.context.mode != 'OBJECT':
         return
     obj = bpy.context.object
+    if obj == None:
+        return
     if obj.type != "ARMATURE":
         return
 
@@ -56,9 +60,9 @@ def on_rig_select(scene):
 
 def on_model_select(scene):
     obj = bpy.context.object
-    view = bpy.types.QUAIL_PT_view  # type: ignore
     if obj == None:
         return
+    view = bpy.types.QUAIL_PT_view  # type: ignore
     ext = ""
     if len(obj.users_collection) == 0:  # type: ignore
         ext = obj.get('ext')
@@ -211,9 +215,10 @@ class ViewPanelQuail(bpy.types.Panel):
         row = layout.row()
         row.label(text="%s.%s" % (self.context_label,
                                   context.scene.quail_props.object_types))  # type: ignore
-        row.label(text=self.display_label)
         layout.prop(context.scene.quail_props, "object_types",  # type: ignore
                     toggle=True)
+        row = layout.row()
+        row.label(text=self.display_label)
         self.flag_box_draw(context)
         return True
 
@@ -225,9 +230,10 @@ class ViewPanelQuail(bpy.types.Panel):
         row.label(text="%s.%s" % (self.context_label,
                                   context.scene.quail_props.object_types))  # type: ignore
         row = layout.row()
-        row.label(text=self.display_label)
         layout.prop(context.scene.quail_props, "object_types",  # type: ignore
                     toggle=True)
+        row = layout.row()
+        row.label(text=self.display_label)
 
         if context.scene.is_flags_open:
             self.flag_box_draw(context)
@@ -240,10 +246,10 @@ class ViewPanelQuail(bpy.types.Panel):
         row = layout.row()
         row.label(text="%s.%s" % (self.context_label,
                                   context.scene.quail_props.object_types))  # type: ignore
-        row = layout.row()
-        row.label(text=self.display_label)
         layout.prop(context.scene.quail_props, "object_types",  # type: ignore
                     toggle=True)
+        row = layout.row()
+        row.label(text=self.display_label)
 
         return True
 
@@ -254,10 +260,10 @@ class ViewPanelQuail(bpy.types.Panel):
         row = layout.row()
         row.label(text="%s.%s" % (self.context_label,
                                   context.scene.quail_props.object_types))  # type: ignore
-        row = layout.row()
-        row.label(text=self.display_label)
         layout.prop(context.scene.quail_props, "object_types",  # type: ignore
                     toggle=True)
+        row = layout.row()
+        row.label(text=self.display_label)
 
         return True
 
