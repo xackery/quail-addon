@@ -330,14 +330,15 @@ def particle_point_parse(quail_path, mesh_path, mesh_name, collection, root_obj)
         bpy.context.view_layer.objects.active = arm
         bpy.ops.object.mode_set(mode='EDIT')
         # TODO: fix
-        arm.data.edit_bones.active = arm.data.edit_bones[pt["bone"]]
-
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.select_all(action='DESELECT')
-        point.select_set(True)
-        arm.select_set(True)
-        bpy.context.view_layer.objects.active = arm
-        bpy.ops.object.parent_set(type='BONE', keep_transform=False)
+        bone_name = pt["bone"]
+        if bone_name != "ATTACH_TO_ORIGIN":
+            arm.data.edit_bones.active = arm.data.edit_bones[pt["bone"]]
+            bpy.ops.object.mode_set(mode='OBJECT')
+            bpy.ops.object.select_all(action='DESELECT')
+            point.select_set(True)
+            arm.select_set(True)
+            bpy.context.view_layer.objects.active = arm
+            bpy.ops.object.parent_set(type='BONE', keep_transform=False)
         # point.parent = root_obj
         # point.parent_type = "BONE"
         # print(root_obj.pose.bones.keys())
