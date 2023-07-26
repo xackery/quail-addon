@@ -177,7 +177,7 @@ class QuailProps(bpy.types.PropertyGroup):
 
     object_types: bpy.props.EnumProperty(
         name="Ext",
-        description="Sets the object type for current material",
+        description="Sets the object type for current object",
         update=on_ext_change,
         items=(
             ("mod", "mod", "Sets the object type to MOD"),

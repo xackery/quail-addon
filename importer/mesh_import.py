@@ -11,19 +11,26 @@ def mesh_import(quail_path: str, mesh_path: str, is_visible: bool) -> bool:
     mesh_name = os.path.splitext(mesh_name)[0]  # take off .mesh extension
 
     print("> Object", mesh_name)
-    # collection = bpy.data.collections.new(mesh_name)
+    collection = bpy.data.collections.new(mesh_name)
     # put collection in scene
-    # bpy.context.scene.collection.children.link(collection)
+    bpy.context.scene.collection.children.link(collection)
 
     if os.path.exists("%s/bone.txt" % mesh_path):
         root_obj = bone_parse(quail_path, mesh_path,
-                              mesh_name, is_visible, None)
+                              mesh_name, is_visible, collection, None)
         root_obj = mesh_parse(quail_path, mesh_path,
-                              mesh_name, is_visible, root_obj)
-        particle_point_parse(quail_path, mesh_path, mesh_name, root_obj)
+                              mesh_name, is_visible, collection, root_obj)
+        particle_point_parse(quail_path,
+                             mesh_path, mesh_name, collection, root_obj)
     else:
         root_obj = mesh_parse(quail_path, mesh_path,
-                              mesh_name, is_visible, None)
+                              mesh_name, is_visible, collection, None)
+    # count the number of objects inside the collection
+    if len(collection.objects) == 1:
+        # if only one object, remove the collection and link the object to the scene
+        bpy.context.scene.collection.objects.link(collection.objects[0])
+        bpy.data.collections.remove(collection)
+
     # collection.objects.link(obj)
 
     # if not is_visible:
@@ -31,7 +38,7 @@ def mesh_import(quail_path: str, mesh_path: str, is_visible: bool) -> bool:
     return True
 
 
-def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, root_obj) -> bpy.types.Object:
+def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, collection, root_obj) -> bpy.types.Object:
     # == Mesh ==
     mesh = bpy.data.meshes.new(mesh_name+"_mesh")
     print(">> Mesh", mesh_name)
@@ -103,7 +110,8 @@ def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, root_obj) -> bpy.ty
 
     faces = {}
     mesh_obj = bpy.data.objects.new(mesh_name, mesh)
-    bpy.context.scene.collection.objects.link(mesh_obj)
+    collection.objects.link(mesh_obj)
+
     for i in range(len(mesh.polygons)):
         poly = mesh.polygons[i]
         if len(mesh_materials) > i:
@@ -135,33 +143,34 @@ def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, root_obj) -> bpy.ty
     bm.to_mesh(mesh)
     bm.free()
 
-    # parent mesh to root object (rig)
-    if root_obj != None:
-        mesh_obj.name = mesh_name+"_mesh"
-        mesh_obj.parent = root_obj
-        # safe to assume root object is a rig
-        mesh_obj.modifiers.new(name="Armature", type="ARMATURE")
-        mesh_obj.modifiers["Armature"].object = root_obj  # type: ignore
-        mesh_obj['ext'] = mesh['ext']
-    else:
-        mesh.name = mesh_name
-        root_obj = mesh_obj
-        root_obj['ext'] = mesh['ext']
+    mesh_obj['ext'] = mesh['ext']
+    collection['ext'] = mesh['ext']
+
+    # # parent mesh to root object (rig)
+    # if root_obj != None:
+    #     mesh_obj.name = mesh_name+"_mesh"
+    #     mesh_obj.parent = root_obj
+    #     # safe to assume root object is a rig
+    #     mesh_obj.modifiers.new(name="Armature", type="ARMATURE")
+    #     mesh_obj.modifiers["Armature"].object = root_obj  # type: ignore
+    #     mesh_obj['ext'] = mesh['ext']
+    # else:
+    #     mesh.name = mesh_name
+    #     root_obj = mesh_obj
+    #     root_obj['ext'] = mesh['ext']
 
     return root_obj
 
 
-def bone_parse(quail_path, mesh_path, mesh_name, is_visible, root_obj) -> bpy.types.Object:
+def bone_parse(quail_path, mesh_path, mesh_name, is_visible, collection, root_obj) -> bpy.types.Object:
     cur_path = "%s/bone.txt" % mesh_path
 
     print(">> Bone", mesh_name)
     arm = bpy.data.armatures.new(name=mesh_name+"_armature")
     # bpy.context.scene.collection.objects.link(arm)
     rig_name = mesh_name+"_rig"
-    if root_obj == None:
-        rig_name = mesh_name
     rig_obj = bpy.data.objects.new(rig_name, arm)
-    bpy.context.scene.collection.objects.link(rig_obj)
+    collection.objects.link(rig_obj)
     bpy.context.view_layer.objects.active = rig_obj
     bpy.ops.object.editmode_toggle()
 
@@ -294,7 +303,7 @@ def traverse_bone(bones: list, bone: dict):
         # bone_sel['ref'].translate(bone_sel['pivot'])
 
 
-def particle_point_parse(quail_path, mesh_path, mesh_name, root_obj):
+def particle_point_parse(quail_path, mesh_path, mesh_name, collection, root_obj):
     cur_path = "%s/particle_point.txt" % mesh_path
     if not os.path.exists(cur_path):
         return
@@ -311,12 +320,12 @@ def particle_point_parse(quail_path, mesh_path, mesh_name, root_obj):
         print(">> ParticlePoint %s" % pt["name"])
         # create a new empty mesh and the object.
         point = bpy.data.objects.new(name=pt["name"], object_data=None)
-        bpy.context.collection.objects.link(point)
+        collection.objects.link(point)
 
-        point.empty_display_type = 'CUBE'
+        point.empty_display_type = 'PLAIN_AXES'
         point.empty_display_size = 2
 
-        arm = bpy.data.objects['%s' % mesh_name]
+        arm = bpy.data.objects['%s_rig' % mesh_name]
         arm.select_set(True)
         bpy.context.view_layer.objects.active = arm
         bpy.ops.object.mode_set(mode='EDIT')
@@ -353,33 +362,34 @@ def string_to_quaternion(line: str) -> Quaternion:
 
 def vertex_load(path: str) -> list:
     verts = []
-    with open(path) as f:
-        lines = f.readlines()
-        # skip first line
-        lines.pop(0)
-        for line in lines:
-            records = line.split("|")
-            pos_line = records[0].split(",")
-            norm_line = records[1].split(",")
-            uv_line = records[2].split(",")
-            uv2_line = records[3].split(",")
-            tint_line = records[4].split(",")
-            verts.append({
-                "position.x": float(pos_line[0]),
-                "position.y": float(pos_line[1]),
-                "position.z": float(pos_line[2]),
-                "normal.x": float(norm_line[0]),
-                "normal.y": float(norm_line[1]),
-                "normal.z": float(norm_line[2]),
-                "uv.x": float(uv_line[0]),
-                "uv.y": float(uv_line[1]),
-                "uv2.x": float(uv2_line[0]),
-                "uv2.y": float(uv2_line[1]),
-                "tint.r": float(tint_line[0]),
-                "tint.g": float(tint_line[1]),
-                "tint.b": float(tint_line[2]),
-                "tint.a": float(tint_line[3]),
-            })
+    r = open(path, "r")
+    lines = r.readlines()
+    # skip first line
+    lines.pop(0)
+    for line in lines:
+        records = line.split("|")
+        pos_line = records[0].split(",")
+        norm_line = records[1].split(",")
+        uv_line = records[2].split(",")
+        uv2_line = records[3].split(",")
+        tint_line = records[4].split(",")
+        verts.append({
+            "position.x": float(pos_line[0]),
+            "position.y": float(pos_line[1]),
+            "position.z": float(pos_line[2]),
+            "normal.x": float(norm_line[0]),
+            "normal.y": float(norm_line[1]),
+            "normal.z": float(norm_line[2]),
+            "uv.x": float(uv_line[0]),
+            "uv.y": float(uv_line[1]),
+            "uv2.x": float(uv2_line[0]),
+            "uv2.y": float(uv2_line[1]),
+            "tint.r": float(tint_line[0]),
+            "tint.g": float(tint_line[1]),
+            "tint.b": float(tint_line[2]),
+            "tint.a": float(tint_line[3]),
+        })
+    r.close()
     return verts
 
 
