@@ -2,9 +2,8 @@
 
 import bpy
 import os
-from mathutils import Vector, Quaternion
-from .ani_import import ani_import
 import bmesh
+from ..common import string_to_vector, string_to_quaternion
 
 
 def mesh_import(quail_path: str, mesh_path: str, is_visible: bool) -> bool:
@@ -31,7 +30,6 @@ def mesh_import(quail_path: str, mesh_path: str, is_visible: bool) -> bool:
         root_obj = mesh_parse(quail_path, mesh_path,
                               mesh_name, is_visible, collection, None)
 
-    ani_import(quail_path, mesh_path, mesh_name)
     # count the number of objects inside the collection
     if len(collection.objects) == 1:
         # if only one object, remove the collection and link the object to the scene
@@ -175,7 +173,7 @@ def bone_parse(quail_path, mesh_path, mesh_name, is_visible, collection, root_ob
     print(">> Bone", mesh_name)
     arm = bpy.data.armatures.new(name=mesh_name+"_armature")
     # bpy.context.scene.collection.objects.link(arm)
-    rig_name = mesh_name+"_rig"
+    rig_name = mesh_name.lower()+"_rig"
     rig_obj = bpy.data.objects.new(rig_name, arm)
     collection.objects.link(rig_obj)
     bpy.context.view_layer.objects.active = rig_obj
@@ -332,7 +330,7 @@ def particle_point_parse(quail_path, mesh_path, mesh_name, collection, root_obj)
         point.empty_display_type = 'PLAIN_AXES'
         point.empty_display_size = 2
 
-        arm = bpy.data.objects['%s_rig' % mesh_name]
+        arm = bpy.data.objects['%s_rig' % mesh_name.lower()]
         arm.select_set(True)
         bpy.context.view_layer.objects.active = arm
         bpy.ops.object.mode_set(mode='EDIT')
@@ -393,16 +391,6 @@ def particle_render_parse(quail_path, mesh_path, mesh_name, collection, root_obj
         obj["renders"] = prop
 
 
-def string_to_vector(line: str) -> Vector:
-    lines = line.split(",")
-    return Vector((float(lines[0]), float(lines[1]), float(lines[2])))
-
-
-def string_to_quaternion(line: str) -> Quaternion:
-    lines = line.split(",")
-    return Quaternion((float(lines[0]), float(lines[1]), float(lines[2]), float(lines[3])))
-
-
 def vertex_load(path: str) -> list:
     verts = []
     r = open(path, "r")
@@ -445,8 +433,6 @@ def triangle_load(root_obj, path: str) -> list:
         for line in lines:
             records = line.split("|")
             if records[0] == "ext":
-                print("ext loaded as %s" % records[1].rstrip())
-                print("setting %s as ext" % root_obj.name)
                 root_obj["ext"] = records[1].rstrip()
                 continue
             index = records[0].split(",")

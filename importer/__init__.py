@@ -106,6 +106,9 @@ def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modif
             for bone in bpy.data.armatures:
                 bpy.data.armatures.remove(bone)
 
+            for action in bpy.data.actions:
+                bpy.data.actions.remove(action)
+
         if is_scene_modified:
             # bpy.context.space_data.clip_end = 15000
             pass

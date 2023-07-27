@@ -4,6 +4,7 @@ import bpy
 import os
 from .mesh_import import mesh_import
 from .material_import import material_load
+from .ani_import import ani_load
 from bpy_extras.wm_utils.progress_report import ProgressReport
 
 # qquail import takes a .quail dir and imports it
@@ -25,6 +26,9 @@ def quail_import(quail_path):
                 file_count += 1
                 continue
             if sub_ext == ".material":
+                file_count += 1
+                continue
+            if sub_ext == ".ani":
                 file_count += 1
                 continue
         progress.enter_substeps(file_count, "Importing quail...")
@@ -54,6 +58,13 @@ def quail_import(quail_path):
             if sub_ext == ".mesh":
                 if mesh_import(quail_path, sub_path, is_visible) and is_visible:
                     is_visible = False
+                progress.step()
+
+        # now load ani things
+        for sub_path, dirs, files in os.walk(quail_path):
+            sub_ext = os.path.splitext(sub_path)[1]
+            if sub_ext == ".ani":
+                ani_load(quail_path, sub_path)
                 progress.step()
     # turn off edit mode
     # bpy.ops.object.mode_set(mode='OBJECT')
