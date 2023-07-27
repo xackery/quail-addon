@@ -15,7 +15,8 @@ def register():
 
 
 def unregister():
-    bpy.utils.unregister_class(QuailProps)
+    if bpy.types.Scene.quail_props != None:
+        bpy.utils.unregister_class(QuailProps)
     del bpy.types.Scene.quail_props
     del bpy.types.Scene.is_flags_open
 

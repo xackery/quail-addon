@@ -230,7 +230,8 @@ def register():
 
 def unregister():
     bpy.utils.unregister_class(ViewPanelQuail)
-    bpy.app.handlers.depsgraph_update_post.remove(
+    if on_selection_changed in bpy.app.handlers.depsgraph_update_post:
+        bpy.app.handlers.depsgraph_update_post.remove(
         on_selection_changed)
 
 
