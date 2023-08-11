@@ -130,5 +130,7 @@ dmypy.json
 
 .vscode/settings.json
 
-quail*
+quail-*
 blender.sh
+
+.DS_Store
