@@ -1,8 +1,12 @@
+# pyright: basic, reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
+
 import bpy
 import os
 from mathutils import Vector, Quaternion
 import bmesh
 from ..common import string_to_vector, string_to_quaternion
+
+default_ani = ""
 
 
 def ani_load(quail_path: str, ani_path: str):
@@ -19,16 +23,26 @@ def ani_load(quail_path: str, ani_path: str):
     full_name = ani_name.lower()+"_rig"
     prefix_name = prefix_name.lower()+"_rig"
     suffix_name = suffix_name.lower()+"_rig"
+    partial_name = '_'.join(names[0:len(names)-1]).lower()+"_rig"
 
-    rig = bpy.data.objects.get(full_name)
+    rig = bpy.data.objects.get(full_name)  # type: bpy.types.Armature
     if rig is None:
         rig = bpy.data.objects.get(prefix_name)
     if rig is None:
         rig = bpy.data.objects.get(suffix_name)
     if rig is None:
-        print("Rig %s, %s, or %s from %s not found" %
-              (full_name, prefix_name, suffix_name, ani_name))
+        rig = bpy.data.objects.get(partial_name)
+    if rig is None:
+        print("Rig %s, %s, %s, or %s from %s not found" %
+              (full_name, prefix_name, partial_name, suffix_name, ani_name))
         return
+
+    global default_ani
+    if default_ani == "":
+        default_ani = ani_name
+
+    if ani_name.find("STND") != -1 or ani_name.find("default") != -1:
+        default_ani = ani_name
 
     print("> Animation %s attaching to rig %s" % (ani_name, rig.name))
     r = open("%s/animation.txt" % ani_path, "r")
@@ -65,6 +79,7 @@ def ani_load(quail_path: str, ani_path: str):
                 bone_name = os.path.basename(file)
                 bone_name = os.path.splitext(bone_name)[0]
 
+                # type: bpy.types.PoseBone
                 bone = rig.pose.bones.get(bone_name)
                 if bone is None:
                     print("Bone %s not found" % bone_name)
@@ -92,3 +107,8 @@ def ani_load(quail_path: str, ani_path: str):
                     bone.keyframe_insert(
                         data_path="location", frame=milliseconds/10.0, index=-1, group=ani_name)
     r.close()
+
+    if rig.animation_data.action is None:
+        rig.animation_data.action = bpy.data.actions.get(default_ani)
+    if rig.animation_data.action.name != default_ani:
+        rig.animation_data.action = bpy.data.actions.get(default_ani)

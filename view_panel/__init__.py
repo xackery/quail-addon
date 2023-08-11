@@ -146,9 +146,9 @@ def on_face_select(scene):
     bpy.types.QUAIL_PT_view.view_mode = "mesh"
 
     bm = bmesh.from_edit_mesh(context.object.data)
-    flag_layer = bm.faces.layers.int.get("flag")
+    flag_layer = bm.faces.layers.float.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")
+        flag_layer = bm.faces.layers.float.new("flag")
 
     polygon = None
     for poly in bm.faces:
@@ -167,7 +167,7 @@ def on_face_select(scene):
 
     if polygon == None:
         return
-    flags = polygon[flag_layer]
+    flags = int(polygon[flag_layer])
 
     if context.object.active_material is None:
         view.display_label = "Face (No Material %d)" % flags
@@ -232,7 +232,7 @@ def unregister():
     bpy.utils.unregister_class(ViewPanelQuail)
     if on_selection_changed in bpy.app.handlers.depsgraph_update_post:
         bpy.app.handlers.depsgraph_update_post.remove(
-        on_selection_changed)
+            on_selection_changed)
 
 
 class ViewPanelQuail(bpy.types.Panel):
@@ -497,9 +497,9 @@ def on_flag_change(self, context: bpy.types.Context):
         return
 
     bm = bmesh.from_edit_mesh(context.object.data)
-    flag_layer = bm.faces.layers.int.get("flag")
+    flag_layer = bm.faces.layers.float.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")
+        flag_layer = bm.faces.layers.float.new("flag")
 
     polygon = None
     for poly in bm.faces:

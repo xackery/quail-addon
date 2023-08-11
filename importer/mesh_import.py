@@ -4,6 +4,7 @@ import bpy
 import os
 import bmesh
 from ..common import string_to_vector, string_to_quaternion
+from .bone_import import bone_load, bone_parse
 
 
 def mesh_import(quail_path: str, mesh_path: str, is_visible: bool) -> bool:
@@ -18,17 +19,23 @@ def mesh_import(quail_path: str, mesh_path: str, is_visible: bool) -> bool:
     bpy.context.scene.collection.children.link(collection)
 
     if os.path.exists("%s/bone.txt" % mesh_path):
-        root_obj = bone_parse(quail_path, mesh_path,
-                              mesh_name, is_visible, collection, None)
-        root_obj = mesh_parse(quail_path, mesh_path,
-                              mesh_name, is_visible, collection, root_obj)
+        rig_obj = bone_parse(quail_path, mesh_path,
+                             mesh_name, is_visible, collection)
+        mesh_obj = mesh_parse(quail_path, mesh_path,
+                              mesh_name, is_visible, collection)
         particle_point_parse(quail_path,
-                             mesh_path, mesh_name, collection, root_obj)
+                             mesh_path, mesh_name, collection)
         particle_render_parse(quail_path,
-                              mesh_path, mesh_name, collection, root_obj)
+                              mesh_path, mesh_name, collection)
+
+        mesh_obj = bpy.context.scene.objects.get(mesh_name)
+        mesh_obj.modifiers.new(name="Armature", type="ARMATURE")
+        mesh_obj.modifiers["Armature"].object = rig_obj
+        mesh_obj.modifiers["Armature"].use_bone_envelopes = True
+
     else:
-        root_obj = mesh_parse(quail_path, mesh_path,
-                              mesh_name, is_visible, collection, None)
+        mesh_obj = mesh_parse(quail_path, mesh_path,
+                              mesh_name, is_visible, collection)
 
     # count the number of objects inside the collection
     if len(collection.objects) == 1:
@@ -43,7 +50,7 @@ def mesh_import(quail_path: str, mesh_path: str, is_visible: bool) -> bool:
     return True
 
 
-def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, collection, root_obj) -> bpy.types.Object:
+def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, collection) -> bpy.types.Object:
     # == Mesh ==
     mesh = bpy.data.meshes.new(mesh_name+"_mesh")
     print(">> Mesh", mesh_name)
@@ -138,12 +145,12 @@ def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, collection, root_ob
     bm = bmesh.new()
     bm.from_mesh(mesh)
 
-    flag_layer = bm.faces.layers.int.get("flag")
+    flag_layer = bm.faces.layers.float.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")
+        flag_layer = bm.faces.layers.float.new("flag")
 
     for face in bm.faces:
-        face[flag_layer] = mesh_flags[face.index]
+        face[flag_layer] = float(mesh_flags[face.index])
 
     bm.to_mesh(mesh)
     bm.free()
@@ -164,151 +171,10 @@ def mesh_parse(quail_path, mesh_path, mesh_name, is_visible, collection, root_ob
     #     root_obj = mesh_obj
     #     root_obj['ext'] = mesh['ext']
 
-    return root_obj
+    return mesh_obj
 
 
-def bone_parse(quail_path, mesh_path, mesh_name, is_visible, collection, root_obj) -> bpy.types.Object:
-    cur_path = "%s/bone.txt" % mesh_path
-
-    print(">> Bone", mesh_name)
-    arm = bpy.data.armatures.new(name=mesh_name+"_armature")
-    # bpy.context.scene.collection.objects.link(arm)
-    rig_name = mesh_name.lower()+"_rig"
-    rig_obj = bpy.data.objects.new(rig_name, arm)
-    collection.objects.link(rig_obj)
-    bpy.context.view_layer.objects.active = rig_obj
-    bpy.ops.object.editmode_toggle()
-
-    bone_obj = bpy.data.objects.new(name="root", object_data=arm)
-
-    bones = bone_load(cur_path)
-
-    # collection.objects.link(bone_obj)
-
-    if not bones:
-        return rig_obj
-
-    for i, bone in enumerate(bones):
-        print("Bone: %s" % bone['name'])
-
-        bone_obj = arm.edit_bones.new(name=bone['name'])
-        bone['ref'] = bone_obj
-        if i == 0:
-            bone_obj.head = (0, 0, 0)
-            bone_obj.tail = bone['pivot']
-
-    traverse_bone(bones, bones[0])
-
-    # find all bones with
-
-    # name|child_index|children_count|next|pivot|rotation|scale
-    # child_next_index = int(bone_line[1])
-    # children_count = int(bone_line[2])
-    # next_index = int(bone_line[3])
-    # position = bone_line[4].split(",")
-    # position = (float(position[0]), float(position[1]), float(position[2]))
-    # quad = bone_line[5].split(",")
-    # quad = (float(quad[0]), float(quad[1]), float(quad[2]), float(quad[3]))
-    # current_bone = arm.edit_bones.new(name=bone_line[0])
-    # current_bone.head = position
-
-    # if next_index == -1 and children_count > 0:
-    #     bone_line = bones[child_next_index]
-    #     bone_line = bone_line.split("|")
-    #     child_next_index = int(bone_line[1])
-    #     children_count = int(bone_line[2])
-    #     next_index = int(bone_line[3])
-    #     position = bone_line[4].split(",")
-    #     position = (float(position[0]), float(position[1]), float(position[2]))
-    #     quad = bone_line[5].split(",")
-    #     quad = (float(quad[0]), float(quad[1]), float(quad[2]), float(quad[3]))
-    #     current_bone.tail = position
-    #     # quat_arm_space = Quaternion(quad)
-    #     # current_bone.transform(quat_arm_space.to_matrix())
-    #     # current_bone.translate(position)
-    #     next_bone = arm.edit_bones.new(name=bone_line[0])
-    #     next_bone.head = position
-    #     next_bone.parent = current_bone
-    #     current_bone = next_bone
-
-    #     if next_index > 0:
-    #         bone_line = bones[child_next_index]
-    #         bone_line = bone_line.split("|")
-    #         child_next_index = int(bone_line[1])
-    #         children_count = int(bone_line[2])
-    #         next_index = int(bone_line[3])
-    #         next_bone = arm.edit_bones.new(name=bone_line[0])
-    #         next_position = bone_line[4].split(",")
-    #         next_position = (float(next_position[0]), float(
-    #             next_position[1]), float(next_position[2]))
-    #         next_quad = bone_line[5].split(",")
-    #         next_quad = (float(next_quad[0]), float(quad[1]),
-    #                      float(next_quad[2]), float(next_quad[3]))
-    #         next_bone.head = (position[0]+next_position[0], position[1] +
-    #                           next_position[1], position[2]+next_position[2])
-    #         next_bone.parent = current_bone
-    # if root_obj != None:
-    #     bone_obj.parent = root_obj
-    # else:
-    #     root_obj = rig_obj
-
-#         bpy.ops.object.mode_set(mode='EDIT', toggle=False)
-#         parent_bone_quad_arm_space = Quaternion((1, 0, 0, 0))
-
-#         for i, line in enumerate(lines):
-#             records = line.split("|")
-#             current_bone = arm.edit_bones.new(name=records[0])
-
-#             position = records[4].split(",")
-#             position = (float(position[0]), float(
-#                 position[1]), float(position[2]))
-#             quad = records[5].split(",")
-#             quad = (float(quad[0]), float(quad[1]),
-#                     float(quad[2]), float(quad[3]))
-#             pivot_line = records[4].split(",")
-#             current_bone.head = (0, 0, 0)
-#             current_bone.tail = (float(pivot_line[0]), float(
-#                 pivot_line[1]), float(pivot_line[2]))
-
-#             if i == 0:
-#                 quat_arm_space = Quaternion(quad)
-#                 current_bone.transform(quat_arm_space.to_matrix())
-#                 current_bone.translate(position)
-#                 parent_bone = current_bone
-#                 parent_bone_tail = current_bone.tail
-#                 parent_bone_quad_arm_space = quat_arm_space
-#             else:
-#                 quat_arm_space = Quaternion(quad)
-#                 transform_quat = parent_bone_quad_arm_space @ quat_arm_space
-#                 current_bone.transform(quat_arm_space.to_matrix())
-#                 current_bone.translate(position)
-#                 current_bone.parent = parent_bone
-#                 parent_bone = current_bone
-#                 parent_bone_tail = current_bone.tail
-#                 parent_bone_quad_arm_space = quat_arm_space
-    return root_obj
-
-
-def traverse_bone(bones: list, bone: dict):
-    bone_cur = bone['ref']
-    if bone['children_count'] > 0:
-        bone_sel = bones[bone['child_index']]
-        bone_sel['ref'].parent = bone_cur
-        bone_sel['ref'].head = bone_cur.tail
-        bone_sel['ref'].tail = bone_sel['pivot']
-
-        traverse_bone(bones, bones[bone['child_index']])
-    if bone['next'] > -1:
-        bone_sel = bones[bone['next']]
-        bone_sel['ref'].parent = bone_cur.parent
-        bone_sel['ref'].head = bone_cur.parent.tail
-        bone_sel['ref'].tail = bone_sel['pivot']
-        traverse_bone(bones, bones[bone['next']])
-
-        # bone_sel['ref'].translate(bone_sel['pivot'])
-
-
-def particle_point_parse(quail_path, mesh_path, mesh_name, collection, root_obj):
+def particle_point_parse(quail_path, mesh_path, mesh_name, collection):
     cur_path = "%s/particle_point.txt" % mesh_path
     if not os.path.exists(cur_path):
         return
@@ -337,23 +203,27 @@ def particle_point_parse(quail_path, mesh_path, mesh_name, collection, root_obj)
         # TODO: fix
         bone_name = pt["bone"]
         point["bone"] = bone_name
-        if bone_name != "ATTACH_TO_ORIGIN":
-            bone = arm.data.edit_bones[bone_name]
-            point.location = bone.tail
-            # arm.data.edit_bones.active = arm.data.edit_bones[pt["bone"]]
-            # bpy.ops.object.mode_set(mode='OBJECT')
-            # bpy.ops.object.select_all(action='DESELECT')
-            # point.select_set(True)
-            # arm.select_set(True)
-            # bpy.context.view_layer.objects.active = arm
-            # bpy.ops.object.parent_set(type='BONE', keep_transform=False)
+        if bone_name == "ATTACH_TO_ORIGIN":
+            continue
+        bone = arm.data.edit_bones.get(bone_name)
+        if bone is None:
+            print(">> ParticlePoint %s bone not found" % bone_name)
+            continue
+        point.location = bone.tail
+        # arm.data.edit_bones.active = arm.data.edit_bones[pt["bone"]]
+        # bpy.ops.object.mode_set(mode='OBJECT')
+        # bpy.ops.object.select_all(action='DESELECT')
+        # point.select_set(True)
+        # arm.select_set(True)
+        # bpy.context.view_layer.objects.active = arm
+        # bpy.ops.object.parent_set(type='BONE', keep_transform=False)
 
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.select_all(action='DESELECT')  # deselect all object
     bpy.context.view_layer.objects.active = None  # remove active object
 
 
-def particle_render_parse(quail_path, mesh_path, mesh_name, collection, root_obj):
+def particle_render_parse(quail_path, mesh_path, mesh_name, collection):
     cur_path = "%s/particle_render.txt" % mesh_path
     if not os.path.exists(cur_path):
         return
@@ -447,30 +317,6 @@ def triangle_load(root_obj, path: str) -> list:
     return triangles
 
 
-def bone_load(path: str) -> list:
-    bones = []
-    with open(path) as f:
-        lines = f.readlines()
-        # skip first line
-        lines.pop(0)
-        for line in lines:
-            records = line.split("|")
-            bone = {
-                "name": records[0],
-                "child_index": int(records[1]),
-                "children_count": int(records[2]),
-                "next": int(records[3]),
-                "pivot": string_to_vector(records[4]),
-                "rotation": string_to_quaternion(records[5]),
-                "scale": string_to_vector(records[6]),
-            }
-            # x = bone["pivot"].x
-            # bone["pivot"].x = bone["pivot"].y
-            # bone["pivot"].y = -x
-            bones.append(bone)
-    return bones
-
-
 def particle_point_load(path: str) -> tuple[str, list]:
     points = []
     name = os.path.splitext(os.path.basename(path))[0]
@@ -481,13 +327,14 @@ def particle_point_load(path: str) -> tuple[str, list]:
     lines.pop(0)
     for line in lines:
         records = line.split("|")
-        points.append({
+        bone = {
             "name": records[0],
             "bone": records[1],
             "translation": string_to_vector(records[2]),
             "rotation": string_to_vector(records[3]),
             "scale": string_to_vector(records[4]),
-        })
+        }
+        points.append(bone)
     r.close()
     return name, points
 

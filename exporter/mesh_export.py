@@ -88,9 +88,9 @@ def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
     bm = bmesh.new()
     mesh = obj.data
     bm.from_mesh(mesh, vertex_normals=True, face_normals=True)
-    flag_layer = bm.faces.layers.int.get("flag")
+    flag_layer = bm.faces.layers.float.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")
+        flag_layer = bm.faces.layers.float.new("flag")
 
     uv_layer = bm.loops.layers.uv.active
     col_lay = bm.loops.layers.color.active
@@ -185,9 +185,9 @@ def mesh_object_export6(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
     bm = bmesh.new()
     mesh = obj.data
     bm.from_mesh(mesh, vertex_normals=True, face_normals=True)
-    flag_layer = bm.faces.layers.int.get("flag")
+    flag_layer = bm.faces.layers.float.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")
+        flag_layer = bm.faces.layers.float.new("flag")
 
     vert_total = 0
     vert_count = 0
@@ -272,9 +272,9 @@ def mesh_object_export5(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
     bm = bmesh.new()
     mesh = obj.data
     bm.from_mesh(mesh, vertex_normals=True, face_normals=True)
-    flag_layer = bm.faces.layers.int.get("flag")
+    flag_layer = bm.faces.layers.float.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")
+        flag_layer = bm.faces.layers.float.new("flag")
 
     vert_count = 0
     normal_count = 0
@@ -345,9 +345,9 @@ def mesh_object_export4(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
     tw = open("%s/triangle.txt" % mesh_path, "w")
     tw.write("index|flag|material_name\n")
 
-    flag_layer = bm.faces.layers.int.get("flag")
+    flag_layer = bm.faces.layers.float.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")
+        flag_layer = bm.faces.layers.float.new("flag")
 
     bm.faces.ensure_lookup_table()
     bm.verts.ensure_lookup_table()
@@ -422,9 +422,9 @@ def mesh_object_export3(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
     tw = open("%s/triangle.txt" % mesh_path, "w")
     tw.write("index|flag|material_name\n")
 
-    flag_layer = bm.faces.layers.int.get("flag")
+    flag_layer = bm.faces.layers.float.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")
+        flag_layer = bm.faces.layers.float.new("flag")
 
     bm.faces.ensure_lookup_table()
     bm.verts.ensure_lookup_table()
@@ -605,9 +605,9 @@ def mesh_object_export(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy
     tw.write("index|flag|material_name\n")
 
     uv_layer = bm.loops.layers.uv.verify()
-    flag_layer = bm.faces.layers.int.get("flag")
+    flag_layer = bm.faces.layers.float.get("flag")
     if flag_layer is None:
-        flag_layer = bm.faces.layers.int.new("flag")
+        flag_layer = bm.faces.layers.float.new("flag")
 
     verts = {}
     bm.verts.index_update()
