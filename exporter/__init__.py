@@ -43,8 +43,10 @@ class ExportQuail(Operator, ExportHelper):
     )
 
     def execute(self, context):
-        return export_data(context,
-                           self.filepath, self.is_triangulate)
+        if export_data(context,
+                       self.filepath, self.is_triangulate):
+            return {'FINISHED'}
+        return {'CANCELLED'}
 
 
 def menu_func_export(self, context):
@@ -52,8 +54,24 @@ def menu_func_export(self, context):
                          text="EverQuest Archive (.eqg/.s3d)")
 
 
-def export_data(context, filepath: str, is_triangulate: bool):
+def export_data(context, filepath: str, is_triangulate: bool) -> bool:
     start_time = time.time()
+
+    material_count = 0
+    for obj in bpy.context.scene.objects:
+        if obj.type != 'MESH':
+            continue
+        for slot in obj.material_slots:
+            if slot.material:
+                material_count += 1
+                break
+        if material_count > 1:
+            break
+
+    if material_count == 0:
+        dialog.message_box("No materials found in scene. Please assign a material to at least one object.",
+                           "Quail Error", 'ERROR')
+        return False
 
     # get base of filepath
     base_name = os.path.basename(filepath)
@@ -71,7 +89,7 @@ def export_data(context, filepath: str, is_triangulate: bool):
         print(msg)
         dialog.message_box(msg,
                            "Quail Error", 'ERROR')
-        return {'CANCELLED'}
+        return False
 
     if os.path.exists(pfs_tmp):
         print("Removing cache")
@@ -82,4 +100,4 @@ def export_data(context, filepath: str, is_triangulate: bool):
             bpy.data.materials.remove(mat)
 
     print("Finished in ", time.time() - start_time, " seconds")
-    return {'FINISHED'}
+    return True

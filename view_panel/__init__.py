@@ -2,6 +2,250 @@
 
 import bpy
 import bmesh
+from bpy_types import Operator
+from ..exporter import export_data
+from ..common import dialog
+import os
+addon_keymaps = []
+
+
+def register():
+    bpy.utils.register_class(ViewPanelQuail)
+    bpy.utils.register_class(QUAIL_PT_fast_export)
+    bpy.app.handlers.depsgraph_update_post.append(
+        on_selection_changed)
+    wm = bpy.context.window_manager
+    kc = wm.keyconfigs.addon
+    if kc:
+        km = wm.keyconfigs.addon.keymaps.new(
+            name='3D View', space_type='VIEW_3D')
+        kmi = km.keymap_items.new(
+            QUAIL_PT_fast_export.bl_idname, type='E', value='PRESS', ctrl=True, shift=True)
+        addon_keymaps.append((km, kmi))
+
+
+def unregister():
+    bpy.utils.unregister_class(ViewPanelQuail)
+    bpy.utils.unregister_class(QUAIL_PT_fast_export)
+    if on_selection_changed in bpy.app.handlers.depsgraph_update_post:
+        bpy.app.handlers.depsgraph_update_post.remove(
+            on_selection_changed)
+    for km, kmi in addon_keymaps:
+        km.keymap_items.remove(kmi)
+    addon_keymaps.clear()
+
+
+class ViewPanelQuail(bpy.types.Panel):
+    # important since its how bpy.ops.import_test.some_data is constructed
+    bl_idname = "QUAIL_PT_view"
+    bl_label = "EverQuest"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'EverQuest'
+
+    context_label: str = ""
+    display_label: str = ""
+    flag_label: str = ""
+    view_mode: str = ""
+    particle_rig_label: str = ""
+
+    def draw(self, context: bpy.types.Context):
+
+        if self.object_draw(context):
+            return
+        if self.mesh_draw(context):
+            return
+        if self.particle_draw(context):
+            return
+        if self.rig_draw(context):
+            return
+
+        layout = self.layout
+        row = layout.row()
+        if context.mode != "OBJECT":
+            row.label(text=self.display_label)
+            return
+        row.label(text="Fast Export")
+        layout.prop(context.scene.quail_props,
+                    "fast_export_path", text="")
+        layout.operator("quail.fast_export", icon='IMPORT', text="Export")
+
+    def object_draw(self, context: bpy.types.Context) -> bool:
+        if self.view_mode != "object":
+            return False
+        layout = self.layout
+        row = layout.row()
+        row.label(text="%s.%s" % (self.context_label,
+                                  context.scene.quail_props.object_types))
+        layout.prop(context.scene.quail_props, "object_types",
+                    toggle=True)
+        row = layout.row()
+        row.label(text=self.display_label)
+        self.flag_box_draw(context)
+        return True
+
+    def mesh_draw(self, context: bpy.types.Context) -> bool:
+        if self.view_mode != "mesh":
+            return False
+        layout = self.layout
+        row = layout.row()
+        row.label(text="%s.%s" % (self.context_label,
+                                  context.scene.quail_props.object_types))
+        row = layout.row()
+        layout.prop(context.scene.quail_props, "object_types",
+                    toggle=True)
+        row = layout.row()
+        row.label(text=self.display_label)
+
+        if context.scene.is_flags_open:
+            self.flag_box_draw(context)
+        return True
+
+    def particle_draw(self, context: bpy.types.Context) -> bool:
+        if self.view_mode != "particle":
+            return False
+        layout = self.layout
+        row = layout.row()
+        row.label(text="%s.%s" % (self.context_label,
+                                  context.scene.quail_props.object_types))
+        layout.prop(context.scene.quail_props, "object_types",
+                    toggle=True)
+        if self.display_label != "":
+            row = layout.row()
+            row.label(text=self.display_label)
+
+        if self.particle_rig_label == "":
+            return True
+
+        row = layout.row()
+        row.label(text="Rig: %s" % self.particle_rig_label)
+        row = layout.row()
+        row.prop(context.scene.quail_props, "bones")
+
+        # row.template_list("MATERIAL_UL_matslots", "", ob, "material_slots", ob, "active_material_index", rows=rows)
+
+        # col = row.column(align=True)
+        # col.operator("object.material_slot_add", icon='ADD', text="")
+        # col.operator("object.material_slot_remove", icon='REMOVE', text="")
+
+        # col.separator()
+
+        return True
+
+    def rig_draw(self, context: bpy.types.Context) -> bool:
+        if self.view_mode != "rig":
+            return False
+        layout = self.layout
+        row = layout.row()
+        row.label(text="%s.%s" % (self.context_label,
+                                  context.scene.quail_props.object_types))
+        layout.prop(context.scene.quail_props, "object_types",
+                    toggle=True)
+        row = layout.row()
+        row.label(text=self.display_label)
+
+        return True
+
+    def flag_box_draw(self, context: bpy.types.Context):
+        layout = self.layout
+        box = layout.box()
+        row = box.row()
+        col = box.column()
+        row.prop(context.scene, "is_flags_open", text="", emboss=False,
+                 icon="TRIA_DOWN" if context.scene.is_flags_open else "TRIA_RIGHT", icon_only=True, toggle=True)
+        row.label(text=self.flag_label)
+        if not context.scene.is_flags_open:
+            return
+
+        sel_count = len(context.selected_objects)
+        if sel_count != 1:
+            return
+
+        props = bpy.data.scenes.get("Scene").quail_props
+        col.prop(context.scene.quail_props, "flag_no_collide",
+                 toggle=True)
+        col.prop(context.scene.quail_props,
+                 "flag_is_invisible",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_three",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_four",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_five",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_six",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_seven",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_eight",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_nine",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_ten",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_eleven",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_twelve",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_thirteen",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_fourteen",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_fifteen",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_sixteen",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_seventeen",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_eighteen",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_nineteen",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_twenty",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_twentyone",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_twentytwo",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_twentythree",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_twentyfour",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_twentyfive",
+                 toggle=True)
+        col.prop(context.scene.quail_props, "is_twentysix",
+                 toggle=True)
+
+
+class QUAIL_PT_fast_export(Operator):
+    bl_idname = "quail.fast_export"
+    bl_label = "Fast Export"
+    bl_description = "Export the selected object to a eqg/s3d file"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        path = context.scene.quail_props.fast_export_path
+        if path == "":
+            dialog.message_box("Please set a path in the export panel",
+                               "Error", 'ERROR')
+            return {'CANCELLED'}
+        if not path.endswith(".eqg") and not path.endswith(".s3d"):
+            dialog.message_box("Please set a path with a .eqg or .s3d extension",
+                               "Error", 'ERROR')
+            return {'CANCELLED'}
+
+        if bpy.data.filepath == "":
+            dialog.message_box("Please save the blend file first",
+                               "Error", 'ERROR')
+            return {'CANCELLED'}
+        base_path = os.path.dirname(bpy.data.filepath)
+        path = os.path.join(base_path, path)
+
+        if export_data(context, path, False):
+            dialog.message_box("Exported to %s" % path,
+                               "Success", 'INFO')
+            return {'FINISHED'}
+        return {'CANCELLED'}
 
 
 def on_selection_changed(scene):
@@ -220,193 +464,6 @@ def bone_list_update(self, context: bpy.types.Context):
     for bone in obj.data.bones:
         bones.append((bone.name, bone.name, "Attach to %s" % bone.name))
     return bones
-
-
-def register():
-    bpy.utils.register_class(ViewPanelQuail)
-    bpy.app.handlers.depsgraph_update_post.append(
-        on_selection_changed)
-
-
-def unregister():
-    bpy.utils.unregister_class(ViewPanelQuail)
-    if on_selection_changed in bpy.app.handlers.depsgraph_update_post:
-        bpy.app.handlers.depsgraph_update_post.remove(
-            on_selection_changed)
-
-
-class ViewPanelQuail(bpy.types.Panel):
-    # important since its how bpy.ops.import_test.some_data is constructed
-    bl_idname = "QUAIL_PT_view"
-    bl_label = "EverQuest"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = 'EverQuest'
-
-    context_label: str = ""
-    display_label: str = ""
-    flag_label: str = ""
-    view_mode: str = ""
-    particle_rig_label: str = ""
-
-    def draw(self, context: bpy.types.Context):
-        if self.object_draw(context):
-            return
-        if self.mesh_draw(context):
-            return
-        if self.particle_draw(context):
-            return
-        if self.rig_draw(context):
-            return
-        layout = self.layout
-        row = layout.row()
-        row.label(text=self.display_label)
-
-    def object_draw(self, context: bpy.types.Context) -> bool:
-        if self.view_mode != "object":
-            return False
-        layout = self.layout
-        row = layout.row()
-        row.label(text="%s.%s" % (self.context_label,
-                                  context.scene.quail_props.object_types))
-        layout.prop(context.scene.quail_props, "object_types",
-                    toggle=True)
-        row = layout.row()
-        row.label(text=self.display_label)
-        self.flag_box_draw(context)
-        return True
-
-    def mesh_draw(self, context: bpy.types.Context) -> bool:
-        if self.view_mode != "mesh":
-            return False
-        layout = self.layout
-        row = layout.row()
-        row.label(text="%s.%s" % (self.context_label,
-                                  context.scene.quail_props.object_types))
-        row = layout.row()
-        layout.prop(context.scene.quail_props, "object_types",
-                    toggle=True)
-        row = layout.row()
-        row.label(text=self.display_label)
-
-        if context.scene.is_flags_open:
-            self.flag_box_draw(context)
-        return True
-
-    def particle_draw(self, context: bpy.types.Context) -> bool:
-        if self.view_mode != "particle":
-            return False
-        layout = self.layout
-        row = layout.row()
-        row.label(text="%s.%s" % (self.context_label,
-                                  context.scene.quail_props.object_types))
-        layout.prop(context.scene.quail_props, "object_types",
-                    toggle=True)
-        if self.display_label != "":
-            row = layout.row()
-            row.label(text=self.display_label)
-
-        if self.particle_rig_label == "":
-            return True
-
-        row = layout.row()
-        row.label(text="Rig: %s" % self.particle_rig_label)
-        row = layout.row()
-        row.prop(context.scene.quail_props, "bones")
-
-        # row.template_list("MATERIAL_UL_matslots", "", ob, "material_slots", ob, "active_material_index", rows=rows)
-
-        # col = row.column(align=True)
-        # col.operator("object.material_slot_add", icon='ADD', text="")
-        # col.operator("object.material_slot_remove", icon='REMOVE', text="")
-
-        # col.separator()
-
-        return True
-
-    def rig_draw(self, context: bpy.types.Context) -> bool:
-        if self.view_mode != "rig":
-            return False
-        layout = self.layout
-        row = layout.row()
-        row.label(text="%s.%s" % (self.context_label,
-                                  context.scene.quail_props.object_types))
-        layout.prop(context.scene.quail_props, "object_types",
-                    toggle=True)
-        row = layout.row()
-        row.label(text=self.display_label)
-
-        return True
-
-    def flag_box_draw(self, context: bpy.types.Context):
-        layout = self.layout
-        box = layout.box()
-        row = box.row()
-        col = box.column()
-        row.prop(context.scene, "is_flags_open", text="", emboss=False,
-                 icon="TRIA_DOWN" if context.scene.is_flags_open else "TRIA_RIGHT", icon_only=True, toggle=True)
-        row.label(text=self.flag_label)
-        if not context.scene.is_flags_open:
-            return
-
-        sel_count = len(context.selected_objects)
-        if sel_count != 1:
-            return
-
-        props = bpy.data.scenes.get("Scene").quail_props
-        col.prop(context.scene.quail_props, "flag_no_collide",
-                 toggle=True)
-        col.prop(context.scene.quail_props,
-                 "flag_is_invisible",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_three",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_four",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_five",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_six",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_seven",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_eight",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_nine",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_ten",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_eleven",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_twelve",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_thirteen",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_fourteen",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_fifteen",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_sixteen",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_seventeen",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_eighteen",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_nineteen",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_twenty",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_twentyone",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_twentytwo",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_twentythree",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_twentyfour",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_twentyfive",
-                 toggle=True)
-        col.prop(context.scene.quail_props, "is_twentysix",
-                 toggle=True)
 
 
 def on_ext_change(self, context: bpy.types.Context):

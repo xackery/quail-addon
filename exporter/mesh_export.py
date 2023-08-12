@@ -12,7 +12,7 @@ particle_writer = None
 render_writer = None
 
 
-def mesh_export(quail_path, is_triangulate: bool):
+def mesh_export(quail_path, is_triangulate: bool) -> bool:
 
     last_object = ""
     for obj in bpy.data.objects:
@@ -41,6 +41,7 @@ def mesh_export(quail_path, is_triangulate: bool):
                             obj.name, obj, is_triangulate)
     if particle_writer != None:
         particle_writer.close()
+    return True
 
 
 def mesh_particle_export(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy.types.Object):

@@ -27,6 +27,8 @@ class QuailProps(bpy.types.PropertyGroup):
         items=bone_list_update
     )
 
+    fast_export_path: StringProperty()
+
     flag_no_collide: BoolProperty(
         name="No Collision",
         description="Does this face cause collisions? (1, 2)",
