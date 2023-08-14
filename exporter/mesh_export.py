@@ -6,7 +6,7 @@ import os
 from mathutils import Vector
 from .material_export import material_export
 import bmesh
-
+from ..common import dialog
 
 particle_writer = None
 render_writer = None
@@ -37,8 +37,8 @@ def mesh_export(quail_path, is_triangulate: bool) -> bool:
             os.makedirs(mesh_path)
 
         mesh_particle_export(quail_path, mesh_path, mesh_name, obj)
-        mesh_object_export7(quail_path, mesh_path,
-                            obj.name, obj, is_triangulate)
+        if not mesh_object_export7(quail_path, mesh_path, obj.name, obj, is_triangulate):
+            return False
     if particle_writer != None:
         particle_writer.close()
     return True
@@ -63,9 +63,9 @@ def mesh_particle_export(quail_path: str, mesh_path: str, mesh_name: str, obj: b
         "id|id2|particlePoint|unknowna|duration|unknownb|unknownffffffff|unknownc\n")
 
 
-def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy.types.Object, is_triangulate: bool):
+def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy.types.Object, is_triangulate: bool) -> bool:
     if obj.type != "MESH":
-        return
+        return True
     print(">> Mesh", mesh_name)
 
     mesh = obj.data
@@ -87,8 +87,13 @@ def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
     tw.write("ext|%s|-1\n" % ext)
 
     bm = bmesh.new()
-    mesh = obj.data
-    bm.from_mesh(mesh, vertex_normals=True, face_normals=True)
+
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    evaluated_object = obj.evaluated_get(depsgraph)
+    mesh_with_modifiers = evaluated_object.to_mesh()
+
+    bm.from_mesh(mesh_with_modifiers, vertex_normals=True, face_normals=True)
+
     flag_layer = bm.faces.layers.float.get("flag")
     if flag_layer is None:
         flag_layer = bm.faces.layers.float.new("flag")
@@ -102,6 +107,13 @@ def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
     vert_id = 0
     for face in bm.faces:
         pf = []
+        if len(face.verts) != 3:
+            dialog.message_box("Object %s has %d vertices, only triangles are supported" % (
+                obj.name, len(face.verts)), "Error", "ERROR")
+            vw.close()
+            tw.close()
+            bm.free()
+            return False
 
         material_name = mesh.materials[face.material_index-1].name
 
@@ -143,6 +155,7 @@ def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
 
     vw.close()
     tw.close()
+    bm.free()
 
 
 def mesh_object_export6(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy.types.Object, is_triangulate: bool):

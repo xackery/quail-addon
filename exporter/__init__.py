@@ -81,7 +81,8 @@ def export_data(context, filepath: str, is_triangulate: bool) -> bool:
     pfs_tmp = tempfile.gettempdir() + "/quail/"+base_name + ".quail"
 
     print("Prepping temp data at %s" % pfs_tmp)
-    quail_export.quail_export(pfs_tmp, is_triangulate)
+    if not quail_export.quail_export(pfs_tmp, is_triangulate):
+        return False
 
     result = quail.run("convert", pfs_tmp, filepath)
     if result != "":

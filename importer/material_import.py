@@ -6,11 +6,11 @@ import os
 materials = {}
 
 
-def material_load(root_path: str, mesh_name: str, material_name: str) -> int:
+def material_load(root_path: str, material_name: str) -> int:
     idx = material_find(material_name)
     if idx != -1:
         return idx
-    return material_property_load(root_path, mesh_name, material_name)
+    return material_property_load(root_path, material_name)
 
 
 def material_find(material_name: str) -> int:
@@ -21,9 +21,8 @@ def material_find(material_name: str) -> int:
     return bpy.data.materials.find(material_name.lower())
 
 
-def material_property_load(root_path: str, mesh_name: str, material_name: str) -> int:
-    property_path = root_path+"/"+mesh_name + \
-        ".mesh/"+material_name+".material/property.txt"
+def material_property_load(root_path: str, material_name: str) -> int:
+    property_path = "%s/%s.material/property.txt" % (root_path, material_name)
     if not os.path.exists(property_path):
         print("property file not found: "+property_path)
         return -1
@@ -50,7 +49,7 @@ def material_property_load(root_path: str, mesh_name: str, material_name: str) -
                 continue
 
             material_property_add(
-                root_path, mesh_name, material_name, records[0], records[1], records[2])
+                root_path, material_name, records[0], records[1], records[2])
             # if records[0] == "e_TextureDiffuse0" and records[1][-4:] == ".dds" and os.path.exists(root_path+"/"+records[1][:-4]+".txt"):
             #     with open(root_path+"/"+records[1][:-4]+".txt") as f:
             #         anim_data = f.read()
@@ -77,7 +76,7 @@ def material_property_load(root_path: str, mesh_name: str, material_name: str) -
     return idx
 
 
-def material_property_add(root_path: str, mesh_name: str, material_name: str, property_name: str, property_value: str, property_category: str):
+def material_property_add(root_path: str, material_name: str, property_name: str, property_value: str, property_category: str):
     if material_name == "":
         print("material name is empty for material_property_add")
         return
@@ -110,8 +109,8 @@ def material_property_add(root_path: str, mesh_name: str, material_name: str, pr
     texture_node = material.node_tree.nodes.new("ShaderNodeTexImage")
     texture_node.label = property_name
 
-    texture_path = root_path + "/" + mesh_name + ".mesh/" + \
-        material_name + ".material/" + property_value
+    texture_path = "%s/%s.material/%s" % (root_path,
+                                          material_name, property_value)
     if not os.path.exists(texture_path):
         print("texture not found: "+texture_path)
         return

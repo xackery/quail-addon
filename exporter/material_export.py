@@ -9,7 +9,7 @@ def material_export(quail_path: str, mesh_path: str, materials: bpy.types.IDMate
     for mat in materials:
         if mat is None:
             continue
-        material_path = "%s/%s.material" % (mesh_path, mat.name)
+        material_path = "%s/%s.material" % (quail_path, mat.name)
         if os.path.exists(material_path):
             continue
         os.makedirs(material_path)

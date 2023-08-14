@@ -22,6 +22,7 @@ def quail_import(quail_path):
         file_count = 0
         for sub_path, dirs, files in os.walk(quail_path):
             sub_ext = os.path.splitext(sub_path)[1]
+            sub_name = os.path.splitext(os.path.basename(sub_path))[0]
             if sub_ext == ".mesh":
                 file_count += 1
                 continue
@@ -49,8 +50,7 @@ def quail_import(quail_path):
                 mesh_name = prefix_base[1][1:]
             if sub_ext == ".material":
                 print("> Material", sub_name)
-                material_load(quail_path, mesh_name, sub_name)
-                progress.step()
+                material_load(quail_path, sub_name)
 
         # now load ref things
         for sub_path, dirs, files in os.walk(quail_path):
