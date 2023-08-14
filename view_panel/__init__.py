@@ -4,7 +4,7 @@ import bpy
 import bmesh
 from bpy_types import Operator
 from ..exporter import export_data
-from ..common import dialog
+from ..common import dialog, version
 import os
 addon_keymaps = []
 
@@ -38,7 +38,7 @@ def unregister():
 class ViewPanelQuail(bpy.types.Panel):
     # important since its how bpy.ops.import_test.some_data is constructed
     bl_idname = "QUAIL_PT_view"
-    bl_label = "EverQuest"
+    bl_label = "Quail %s" % (version())
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'EverQuest'
@@ -46,7 +46,7 @@ class ViewPanelQuail(bpy.types.Panel):
     context_label: str = ""
     display_label: str = ""
     flag_label: str = ""
-    view_mode: str = ""
+    view_mode: str = "none"
     particle_rig_label: str = ""
 
     def draw(self, context: bpy.types.Context):

@@ -2,6 +2,7 @@
 
 import bpy
 from bpy.props import StringProperty, EnumProperty, PointerProperty, BoolProperty
+from ..common import version
 
 
 def register():
@@ -23,7 +24,7 @@ def on_shader_change(self, context: bpy.types.Context):
 
 class MaterialEditQuail(bpy.types.Panel):
     bl_idname = "QUAIL_PT_panel"
-    bl_label = "EverQuest"
+    bl_label = "Quail %s" % (version())
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = 'material'
