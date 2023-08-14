@@ -7,7 +7,7 @@ import bpy
 import os
 import time
 import tempfile
-from ..common import dialog, quail
+from ..common import dialog, quail, is_dev
 import shutil
 from . import quail_export as quail_export
 
@@ -92,9 +92,9 @@ def export_data(context, filepath: str, is_triangulate: bool) -> bool:
                            "Quail Error", 'ERROR')
         return False
 
-    if os.path.exists(pfs_tmp):
+    if os.path.exists(pfs_tmp) and not is_dev():
         print("Removing cache")
-        # shutil.rmtree(pfs_tmp)
+        shutil.rmtree(pfs_tmp)
     # remove orphened scene materials
     for mat in bpy.data.materials:
         if mat.users == 0:

@@ -7,7 +7,7 @@ import bpy
 import os
 import time
 import tempfile
-from ..common import dialog, quail
+from ..common import dialog, quail, is_dev
 import shutil
 from . import quail_import
 from bpy_extras.wm_utils.progress_report import ProgressReport
@@ -126,9 +126,10 @@ def import_data(context, filepath, is_scene_cleared: bool = True, is_scene_modif
         for img in bpy.data.images:
             if img.users > 0 and os.path.exists(img.filepath):
                 img.pack()
-        # if os.path.exists(pfs_tmp):
-        #    print("removing cache")
-        #    shutil.rmtree(pfs_tmp)
+
+        if os.path.exists(pfs_tmp) and not is_dev():
+            print("Removing cache")
+            shutil.rmtree(pfs_tmp)
 
         if bpy.context.mode != 'OBJECT':
             bpy.ops.object.mode_set(mode='OBJECT')
