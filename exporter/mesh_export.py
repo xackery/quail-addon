@@ -13,7 +13,7 @@ render_writer = None
 
 
 def mesh_export(quail_path, is_triangulate: bool) -> bool:
-
+    print("Exporting mesh")
     last_object = ""
     for obj in bpy.data.objects:
         mesh_name = ""
@@ -156,6 +156,7 @@ def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
     vw.close()
     tw.close()
     bm.free()
+    return True
 
 
 def mesh_object_export6(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy.types.Object, is_triangulate: bool):

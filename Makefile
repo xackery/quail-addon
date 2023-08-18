@@ -1,4 +1,4 @@
-VERSION ?= 2.1.3
+VERSION ?= 2.1.4
 
 comma := ,
 COMMA_VERSION := $(subst .,${comma} ,${VERSION})
@@ -8,7 +8,7 @@ build:
 	mkdir -p bin
 	-rm -rf bin/*
 	cd /src/quail && make build-windows
-	cp /src/quail/bin/quail-windows.exe bin/quail.exe
+	cp /src/quail/bin/quail.exe bin/quail.exe
 	sed -i '' 's/"version": (1, 0, 0),/"version": (${COMMA_VERSION}),/' __init__.py
 	sed -i '' 's/"0.0.1"/"${VERSION}"/' common/__init__.py
 	sed -i '' 's/return True  # Build/return False  # Build/' common/__init__.py
