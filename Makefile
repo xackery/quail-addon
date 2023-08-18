@@ -7,8 +7,8 @@ build:
 	@echo "build: packing and building"
 	mkdir -p bin
 	-rm -rf bin/*
-	cd /src/quail && make build-windows
-	cp /src/quail/bin/quail.exe bin/quail.exe
+	cd /src/quail && make build-windows-addon
+	cp /src/quail/bin/quail-addon.exe bin/quail.exe
 	sed -i '' 's/"version": (1, 0, 0),/"version": (${COMMA_VERSION}),/' __init__.py
 	sed -i '' 's/"0.0.1"/"${VERSION}"/' common/__init__.py
 	sed -i '' 's/return True  # Build/return False  # Build/' common/__init__.py
