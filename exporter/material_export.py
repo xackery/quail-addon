@@ -49,6 +49,7 @@ def material_export(quail_path: str, mesh_path: str, materials: bpy.types.IDMate
                             image_name = mat.name
                         # save_render of node
 
+                    print(">>>> Texture %s" % mat.name)
                     is_texture_diffuse_written = True
                     mw.write("%s|%s|%d\n" % (
                         label, image_name, 2))
@@ -63,6 +64,7 @@ def material_export(quail_path: str, mesh_path: str, materials: bpy.types.IDMate
                         pixels[(y * 16+x)] = rgba
                 pixels = [chan for px in pixels for chan in px]
                 image.pixels = pixels
+                print(">>>> Texture %s" % mat.name)
                 mw.write("e_TextureDiffuse0|%s.png|2\n" % (
                     mat.name))
                 image.save_render(filepath="%s/%s.png" %
