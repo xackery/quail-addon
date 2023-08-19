@@ -2,6 +2,7 @@
 
 import bpy
 import os
+from .model_export import Model
 
 from mathutils import Vector
 from .material_export import material_export
@@ -15,6 +16,7 @@ render_writer = None
 def mesh_export(quail_path, is_triangulate: bool) -> bool:
     print("Exporting mesh")
     last_object = ""
+    current_model = Model("None")
     for obj in bpy.data.objects:
         mesh_name = ""
 
@@ -28,23 +30,28 @@ def mesh_export(quail_path, is_triangulate: bool) -> bool:
             continue
 
         if last_object != mesh_name:
+            if current_model.name != "None":
+                current_model.write()
             print("> Model %s" % mesh_name)
             last_object = mesh_name
+            current_model = Model(mesh_name)
 
         mesh_path = "%s/%s.mesh" % (quail_path, mesh_name)
         # check if path exists
         if not os.path.exists(mesh_path):
             os.makedirs(mesh_path)
 
-        mesh_particle_export(quail_path, mesh_path, mesh_name, obj)
-        if not mesh_object_export7(quail_path, mesh_path, obj.name, obj, is_triangulate):
+        mesh_particle_export(quail_path, mesh_path,
+                             mesh_name, obj, current_model)
+        if not mesh_object_export8(quail_path, mesh_path, obj.name, obj, is_triangulate, current_model):
             return False
     if particle_writer != None:
         particle_writer.close()
+    current_model.write(quail_path)
     return True
 
 
-def mesh_particle_export(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy.types.Object):
+def mesh_particle_export(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy.types.Object, model: Model):
     if obj.type != "EMPTY":
         return
     if obj.empty_display_type != "PLAIN_AXES":
@@ -63,7 +70,64 @@ def mesh_particle_export(quail_path: str, mesh_path: str, mesh_name: str, obj: b
         "id|id2|particlePoint|unknowna|duration|unknownb|unknownffffffff|unknownc\n")
 
 
-def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy.types.Object, is_triangulate: bool) -> bool:
+def mesh_object_export8(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy.types.Object, is_triangulate: bool, model: Model) -> bool:
+    if obj.type != "MESH":
+        return True
+    print(">> Mesh", mesh_name)
+
+    mesh = obj.data
+    material_export(quail_path, mesh_path, mesh.materials)
+
+    ext = ""
+    if len(obj.users_collection) > 0 and obj.users_collection[0].name != "Scene Collection" and obj.users_collection[0].get('ext') != None:
+        ext = obj.users_collection[0].get('ext')
+    elif obj.get('ext') != None:
+        ext = obj.get('ext')
+    if ext == "":
+        ext = "mod"
+    model.ext = ext
+
+    bm = bmesh.new()
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    evaluated_object = obj.evaluated_get(depsgraph)
+    mesh_with_modifiers = evaluated_object.to_mesh()
+
+    bm.from_mesh(mesh_with_modifiers, vertex_normals=True, face_normals=True)
+
+    flag_layer = bm.faces.layers.float.get("flag")
+    if flag_layer is None:
+        flag_layer = bm.faces.layers.float.new("flag")
+
+    uv_layer = bm.loops.layers.uv.active
+    col_lay = bm.loops.layers.color.active
+
+    for face in bm.faces:  # type: bpy.BMFaceSeq
+        model_verts = []
+        if len(face.verts) != 3:
+            dialog.message_box("Object %s has %d vertices, only triangles are supported" % (
+                obj.name, len(face.verts)), "Error", "ERROR")
+            bm.free()
+            evaluated_object.to_mesh_clear()
+            return False
+        for loop in face.loops:
+            normal = loop.vert.normal
+            if col_lay is not None:
+                color = tuple(int(x * 255.0) for x in loop[col_lay])
+            else:
+                color = (128, 128, 128, 255)
+
+            vert_global = obj.matrix_world @ loop.vert.co
+            model_verts.append(model.add_vertex(
+                vert_global[:], normal[:], loop[uv_layer].uv[:], color))
+        material_name = mesh.materials[face.material_index].name
+
+        model.add_triangle(model_verts, material_name, face[flag_layer])
+    bm.free()
+    evaluated_object.to_mesh_clear()
+    return True
+
+
+def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bpy.types.Object, is_triangulate: bool, model: Model) -> bool:
     if obj.type != "MESH":
         return True
     print(">> Mesh", mesh_name)
@@ -84,6 +148,7 @@ def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
         ext = obj.get('ext')
     if ext == "":
         ext = "mod"
+    model.ext = ext
     tw.write("ext|%s|-1\n" % ext)
 
     bm = bmesh.new()
@@ -105,7 +170,7 @@ def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
     vert_map = {}
     verts = []
     vert_id = 0
-    for face in bm.faces:
+    for face in bm.faces:  # type: bpy.BMFaceSeq
         pf = []
         if len(face.verts) != 3:
             dialog.message_box("Object %s has %d vertices, only triangles are supported" % (
@@ -117,6 +182,7 @@ def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
 
         material_name = mesh.materials[face.material_index-1].name
 
+        model_verts = []
         faces.append((pf, face[flag_layer], material_name))
         for loop in face.loops:
 
@@ -124,20 +190,26 @@ def mesh_object_export7(quail_path: str, mesh_path: str, mesh_name: str, obj: bp
 
             uv = loop[uv_layer].uv[:]
             map_id = v, uv
-
-            if (_id := vert_map.get(map_id)) is not None:
-                pf.append(_id)
-                continue
-
             normal = v.normal
             if col_lay is not None:
                 color = tuple(int(x * 255.0) for x in loop[col_lay])
             else:
                 color = (128, 128, 128, 255)
+            model_verts.append(model.add_vertex(
+                v.co[:], normal[:], uv[:], color))
+
+            if (_id := vert_map.get(map_id)) is not None:
+                pf.append(_id)
+                continue
+
             verts.append((v, normal, uv, color))
             vert_map[map_id] = vert_id
             pf.append(vert_id)
             vert_id += 1
+
+        material_name = bpy.context.object.data.materials[face.material_index].name
+
+        model.add_triangle(model_verts, material_name, face[flag_layer])
 
     for v, normal, uv, color in verts:
         vw.write("%0.8f,%0.8f,%0.8f|" % (

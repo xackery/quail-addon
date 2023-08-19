@@ -56,12 +56,12 @@ def material_export(quail_path: str, mesh_path: str, materials: bpy.types.IDMate
 
                     break
             else:
-                image = bpy.data.images.new("%s.png" % mat.name, 1, 1)
-                pixels = [None] * 16 * 16
-                for x in range(16):
-                    for y in range(16):
+                image = bpy.data.images.new("%s.png" % mat.name, 32, 32)
+                pixels = [None] * 32 * 32
+                for x in range(32):
+                    for y in range(32):
                         rgba = base_color.default_value
-                        pixels[(y * 16+x)] = rgba
+                        pixels[(y * 32+x)] = rgba
                 pixels = [chan for px in pixels for chan in px]
                 image.pixels = pixels
                 print(">>>> Texture %s" % mat.name)
