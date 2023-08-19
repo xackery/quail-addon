@@ -75,7 +75,7 @@ class Model():
                 vert.position[:]))
             vw.write("%0.8f,%0.8f,%0.8f|" % (
                 vert.normal[:]))
-            vw.write("%0.8f,%0.8f|" % (vert.uv[0], vert.uv[1]+1))
+            vw.write("%0.8f,%0.8f|" % (vert.uv[0], vert.uv[1]))
             vw.write("%0.8f,%0.8f|" % (0, 0))
             vw.write("%d,%d,%d,%d\n" % vert.color)
 
