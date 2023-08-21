@@ -31,12 +31,12 @@ def mesh_export(quail_path, is_triangulate: bool) -> bool:
 
         if last_object != mesh_name:
             if current_model.name != "None":
-                current_model.write()
+                current_model.write(quail_path)
             print("> Model %s" % mesh_name)
             last_object = mesh_name
             current_model = Model(mesh_name)
 
-        mesh_path = "%s/%s.mesh" % (quail_path, mesh_name)
+        mesh_path = "%s/%s.model" % (quail_path, mesh_name)
         # check if path exists
         if not os.path.exists(mesh_path):
             os.makedirs(mesh_path)

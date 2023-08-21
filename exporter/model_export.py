@@ -56,7 +56,7 @@ class Model():
         return index
 
     def write(self, quail_path: str) -> bool:
-        mesh_path = "%s/%s.mesh" % (quail_path, self.name)
+        mesh_path = "%s/%s.model" % (quail_path, self.name)
 
         vw = open("%s/vertex.txt" % mesh_path, "w")
         vw.write("position|normal|uv|uv2|tint\n")

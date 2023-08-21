@@ -23,7 +23,7 @@ def quail_import(quail_path):
         for sub_path, dirs, files in os.walk(quail_path):
             sub_ext = os.path.splitext(sub_path)[1]
             sub_name = os.path.splitext(os.path.basename(sub_path))[0]
-            if sub_ext == ".mesh":
+            if sub_ext == ".model":
                 file_count += 1
                 continue
             if sub_ext == ".material":
@@ -44,8 +44,8 @@ def quail_import(quail_path):
             sub_name = os.path.splitext(os.path.basename(sub_path))[0]
 
             mesh_name = ""
-            if sub_path.find(".mesh"):
-                dir_base = sub_path.split(".mesh")
+            if sub_path.find(".model"):
+                dir_base = sub_path.split(".model")
                 prefix_base = dir_base[0].split(".quail")
                 mesh_name = prefix_base[1][1:]
             if sub_ext == ".material":
@@ -55,7 +55,7 @@ def quail_import(quail_path):
         # now load ref things
         for sub_path, dirs, files in os.walk(quail_path):
             sub_ext = os.path.splitext(sub_path)[1]
-            if sub_ext == ".mesh":
+            if sub_ext == ".model":
                 if mesh_import(quail_path, sub_path, is_visible) and is_visible:
                     is_visible = False
                 progress.step()
