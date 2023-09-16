@@ -2,7 +2,9 @@
 
 import bpy
 from ..common import string_to_vector, string_to_quaternion
+import mathutils
 from mathutils import Vector, Quaternion
+import math
 
 
 def bone_parse(quail_path, mesh_path, mesh_name, is_visible, collection) -> bpy.types.Object:
@@ -28,13 +30,17 @@ def bone_parse(quail_path, mesh_path, mesh_name, is_visible, collection) -> bpy.
 
     bpy.ops.object.mode_set(mode='EDIT')
     for i, bone in enumerate(bones):
-        print(">>> %s" % bone['name'])
+        print(">>> bone %s" % bone['name'])
+        print(">>>> %s" % bone['rotation'])
+        rotation_matrix = bone['rotation'].to_matrix().to_4x4()
 
         bone_sel = arm.edit_bones.new(name=bone['name'])
         bone['ref'] = bone_sel
         if i == 0:
             bone_sel.head = (0, 0, 0)
             bone_sel.tail = bone['pivot']
+            # bone_sel.roll = 60
+            # print(">>>> %s" % bone['rotation'])
             # rotation_matrix = bone['rotation'].to_matrix().to_4x4()
             # bone_sel.tail = bone_sel.head + \
             #     bone['pivot']+(rotation_matrix @ Vector((0, 1, 0)))
@@ -168,7 +174,20 @@ def bone_traverse(bones: list, bone: dict):
         bone_sel_obj = bone_sel['ref']  # type: bpy.types.EditBone
         bone_sel['ref'].parent = bone_cur_obj.parent
         bone_sel_obj.head = bone_cur_obj.parent.tail
-        bone_sel_obj.tail = bone_sel_obj.head+bone_sel['pivot']
+
+        mat_loc = mathutils.Matrix.Translation(
+            bone_sel_obj.head+bone_sel_obj.tail)
+        mat_sca = mathutils.Matrix.Scale(1.0, 4, (0.0, 0.0, 1.0))
+        mat_rot = bone_sel['rotation'].to_matrix().to_4x4()
+        mat_out = mat_loc @ mat_sca @ mat_rot
+
+        bone_sel_obj.tail = mat_out.to_translation()
+        bone_sel_obj.roll = mat_out.to_euler().z
+
+        # bone_sel_obj.tail = bone_sel_obj.head+bone_sel['pivot']
+        # rot_euler = rot_quat.to_euler()
+        # bone_sel_obj.roll = 60
+
         # rotation_matrix = bone_sel['rotation'].to_matrix().to_4x4()
         # bone_sel_obj.tail = bone_sel_obj.head + \
         #     bone_sel['pivot']+(rotation_matrix @ Vector((0, 1, 0)))

@@ -50,7 +50,6 @@ class ViewPanelQuail(bpy.types.Panel):
     particle_rig_label: str = ""
 
     def draw(self, context: bpy.types.Context):
-
         if self.object_draw(context):
             return
         if self.mesh_draw(context):
@@ -249,12 +248,15 @@ class QUAIL_PT_fast_export(Operator):
 
 
 def on_selection_changed(scene):
+    last_view_mode = bpy.types.QUAIL_PT_view.view_mode
     bpy.types.QUAIL_PT_view.context_label = ""
     bpy.types.QUAIL_PT_view.view_mode = "none"
     on_mesh_select(scene)
     on_particle_select(scene)
     on_face_select(scene)
     on_rig_select(scene)
+    if last_view_mode != bpy.types.QUAIL_PT_view.view_mode:
+        print("view mode changed to %s" % bpy.types.QUAIL_PT_view.view_mode)
 
 
 def on_mesh_select(scene):
@@ -394,7 +396,7 @@ def on_face_select(scene):
     if flag_layer is None:
         flag_layer = bm.faces.layers.float.new("flag")
 
-    polygon = None
+    polygon = None  # type: bmesh.types.BMFace
     for poly in bm.faces:
         if not poly.select:
             continue
@@ -419,6 +421,7 @@ def on_face_select(scene):
         view.display_label = "Face (%s)" % (
             context.object.active_material.name)
     view.flag_label = "Flags: %d" % flags
+    print("flags for index %d" % flags)
     props = bpy.data.scenes[0].quail_props
     props.flag_no_collide = flags & 1 == 1
     props.flag_is_invisible = flags & 2 == 2

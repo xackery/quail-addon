@@ -10,6 +10,7 @@ default_ani = ""
 
 
 def ani_load(quail_path: str, ani_path: str):
+    return
     ani_name = os.path.basename(ani_path)
     ani_name = os.path.splitext(ani_name)[0]  # take off .ani extension
     # get the last data after _
