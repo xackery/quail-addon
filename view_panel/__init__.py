@@ -12,8 +12,8 @@ addon_keymaps = []
 def register():
     bpy.utils.register_class(ViewPanelQuail)
     bpy.utils.register_class(QUAIL_PT_fast_export)
-    bpy.app.handlers.depsgraph_update_post.append(
-        on_selection_changed)
+    if on_selection_changed not in bpy.app.handlers.depsgraph_update_post:
+        bpy.app.handlers.depsgraph_update_post.append(on_selection_changed)
     wm = bpy.context.window_manager
     kc = wm.keyconfigs.addon
     if kc:
@@ -48,8 +48,14 @@ class ViewPanelQuail(bpy.types.Panel):
     flag_label: str = ""
     view_mode: str = "none"
     particle_rig_label: str = ""
+    is_select_registered: bool = False
 
     def draw(self, context: bpy.types.Context):
+        if not self.is_select_registered:
+            self.is_select_registered = True
+            if on_selection_changed not in bpy.app.handlers.depsgraph_update_post:
+                bpy.app.handlers.depsgraph_update_post.append(
+                    on_selection_changed)
         if self.object_draw(context):
             return
         if self.mesh_draw(context):
@@ -248,15 +254,12 @@ class QUAIL_PT_fast_export(Operator):
 
 
 def on_selection_changed(scene):
-    last_view_mode = bpy.types.QUAIL_PT_view.view_mode
     bpy.types.QUAIL_PT_view.context_label = ""
     bpy.types.QUAIL_PT_view.view_mode = "none"
     on_mesh_select(scene)
     on_particle_select(scene)
     on_face_select(scene)
     on_rig_select(scene)
-    if last_view_mode != bpy.types.QUAIL_PT_view.view_mode:
-        print("view mode changed to %s" % bpy.types.QUAIL_PT_view.view_mode)
 
 
 def on_mesh_select(scene):
